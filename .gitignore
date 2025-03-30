@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.py[cod]
+.python-version
+.venv/
+venv/
+
+# Data
+data/chart_data.json
+
+# Environment
+.env
+.env.local

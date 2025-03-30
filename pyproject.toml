@@ -1,0 +1,10 @@
+[project]
+name = "crypto-spread-monitor"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "ccxt>=4.4.71",
+    "pandas>=2.2.3",
+]

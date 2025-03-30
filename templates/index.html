@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BTC/ETH Arbitrage Monitor</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Подключаем Lightweight Charts ПЕРЕД вашими скриптами -->
+    <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
+    <script>
+        // Проверка загрузки библиотеки
+        window.addEventListener('load', function() {
+            if (typeof LightweightCharts === 'undefined') {
+                alert('ОШИБКА: Библиотека графиков не загрузилась. Проверьте интернет-соединение.');
+            }
+        });
+    </script>
+</head>
+<body>
+    <h1>BTC/ETH Arbitrage Monitor</h1>
+
+    <div class="stats-container">
+        <div class="stat-box" id="current-spread">
+            <div>Current Spread</div>
+            <div id="spread-value">Loading...</div>
+        </div>
+        <div class="stat-box" id="max-spread">
+            <div>Max Spread (24h)</div>
+            <div id="max-spread-value">Loading...</div>
+        </div>
+        <div class="stat-box" id="min-spread">
+            <div>Min Spread (24h)</div>
+            <div id="min-spread-value">Loading...</div>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <div class="chart-title">BTC/USDT</div>
+        <div id="chart-btc"></div>
+    </div>
+
+    <div class="chart-container">
+        <div class="chart-title">ETH/USDT</div>
+        <div id="chart-eth"></div>
+    </div>
+
+    <div class="chart-container">
+        <div class="chart-title">BTC in ETH Units</div>
+        <div id="chart-btc-eth"></div>
+    </div>
+
+    <div class="chart-container">
+        <div class="chart-title">Percentage Difference (%)</div>
+        <div id="chart-diff"></div>
+    </div>
+
+    <button class="refresh-btn" id="refresh-btn">Refresh Data</button>
+
+    <div class="last-update" id="last-update">
+        Last updated: Loading...
+    </div>
+
+    <script src="js/charts.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/data.js"></script>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
