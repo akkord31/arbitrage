@@ -40,6 +40,10 @@ def create_tables():
         )
     ''')
 
+    # Очистка данных при запуске
+    cursor.execute("DELETE FROM market_data_24h")
+    cursor.execute("DELETE FROM market_data_180d")
+
     conn.commit()
     conn.close()
 
@@ -81,10 +85,10 @@ def calculate_and_store_metrics(btc_data, eth_data, table_name):
     merged = pd.merge(btc_data, eth_data, on='timestamp', suffixes=('_btc', '_eth'))
     merged['btc_to_eth'] = merged['close_btc'] / merged['close_eth']
     avg_ratio = merged['btc_to_eth'].mean()
-    merged['btc_as_eth'] = merged['close_btc'] / avg_ratio
+    merged['btc_as_eth'] = round(merged['close_btc'] / avg_ratio, 2)
 
     conn = sqlite3.connect("market_data.db")
-    merged[['timestamp', 'close_btc', 'close_eth']].to_sql(table_name, conn, if_exists='replace', index=False)
+    merged[['timestamp', 'close_btc', 'close_eth', 'btc_as_eth']].to_sql(table_name, conn, if_exists='replace', index=False)
     conn.close()
     logger.info(f"Данные сохранены в {table_name}")
 
@@ -92,6 +96,7 @@ def calculate_and_store_metrics(btc_data, eth_data, table_name):
 def main():
     """Основная функция"""
     exchange = initialize_exchange()
+
     create_tables()
 
     btc_data_24h = get_data(exchange, 'BTC/USDT', '1m', hours=24)

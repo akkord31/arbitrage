@@ -9,6 +9,8 @@ import json
 from pathlib import Path
 import logging
 
+import pull_data
+
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -83,7 +85,7 @@ class AutoRefreshHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
 			# Оптимизированный запрос с лимитом
 			cursor.execute(f"""
-                SELECT timestamp, close_btc, close_eth 
+                SELECT timestamp, close_btc, close_eth, btc_as_eth
                 FROM {table_name} 
                 ORDER BY timestamp DESC 
             """)
@@ -104,7 +106,8 @@ class AutoRefreshHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 				self.wfile.write(json.dumps({
 					"timestamp": row[0],
 					"close_btc": row[1],
-					"close_eth": row[2]
+					"close_eth": row[2],
+					"btc_as_eth": row[3]
 				}).encode())
 			self.wfile.write(b']')
 
@@ -126,7 +129,7 @@ def fetch_from_sqlite(table_name):
 	try:
 		# Проверяем существование таблицы
 		cursor.execute(f"""
-            SELECT timestamp, close_btc, close_eth 
+            SELECT timestamp, close_btc, close_eth, btc_as_eth
             FROM {table_name} 
             ORDER BY timestamp DESC
         """)
@@ -181,6 +184,8 @@ def check_database():
 
 def run_server(port=8000):
 	"""Запуск HTTP сервера"""
+	pull_data.main()
+
 	init_database()
 	check_database()  # Добавляем проверку
 
@@ -202,4 +207,4 @@ def run_server(port=8000):
 
 
 if __name__ == "__main__":
-	run_server()
+	run_server(8080)
