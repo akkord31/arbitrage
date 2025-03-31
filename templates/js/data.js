@@ -1,8 +1,7 @@
-// Загрузка данных
-async function fetchData() {
+// Загрузка данных из API
+async function fetchData(interval) {
     try {
-        const timestamp = new Date().getTime();
-        const response = await fetch(`data/chart_data.json?t=${timestamp}`);
+        const response = await fetch(`/api/data?interval=${interval}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -28,26 +27,18 @@ function updateStats(data) {
 
     // Цветовая индикация
     const spreadElement = document.getElementById('spread-value');
-    if (currentDiff > 0) {
-        spreadElement.style.color = '#27ae60';
-    } else if (currentDiff < 0) {
-        spreadElement.style.color = '#e74c3c';
-    } else {
-        spreadElement.style.color = '#333';
-    }
+    spreadElement.style.color = currentDiff > 0 ? '#27ae60' : currentDiff < 0 ? '#e74c3c' : '#333';
 }
 
 // Сохранение данных
 function saveHistory(data) {
     try {
-        const history = loadHistory(); // Загружаем текущую историю
+        const history = loadHistory();
         const newEntry = {
             timestamp: new Date().toISOString(),
             data: data
         };
         history.push(newEntry);
-
-        // Сохраняем только последние 100 записей
         localStorage.setItem('spreadHistory', JSON.stringify(history.slice(-100)));
     } catch (e) {
         console.error('Failed to save history:', e);

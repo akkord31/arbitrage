@@ -1,6 +1,6 @@
 import ccxt
+import sqlite3
 import pandas as pd
-import json
 from datetime import datetime, timedelta
 import time
 import logging
@@ -11,121 +11,97 @@ logger = logging.getLogger(__name__)
 
 
 def initialize_exchange():
-	"""Инициализация подключения к бирже"""
-	exchange = ccxt.binance({
-		'enableRateLimit': True,  # Включение лимита запросов
-		'options': {
-			'defaultType': 'spot',  # Торговля на спотовом рынке
-		}
-	})
-	return exchange
+    """Инициализация подключения к бирже"""
+    exchange = ccxt.binance({
+        'enableRateLimit': True,
+        'options': {'defaultType': 'spot'}
+    })
+    return exchange
 
 
-def fetch_data(exchange, symbol, timeframe='1h', days=3, max_retries=3):
-    """Загрузка данных с обработкой ошибок и повторными попытками"""
-    since = int((datetime.utcnow() - timedelta(days=days)).timestamp() * 1000)
-    data = None
+def create_tables():
+    """Создание таблиц в SQLite"""
+    conn = sqlite3.connect("market_data.db")
+    cursor = conn.cursor()
 
-    for attempt in range(max_retries):
-        try:
-            logger.info(f"Fetching data for {symbol} (attempt {attempt + 1})")
-            ohlcv = exchange.fetch_ohlcv(symbol, timeframe=timeframe, since=since, limit=1000)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS market_data_24h (
+            timestamp INTEGER PRIMARY KEY,
+            close_btc REAL,
+            close_eth REAL
+        )
+    ''')
 
-            if not ohlcv:
-                logger.warning(f"No data received for {symbol}")
-                return pd.DataFrame()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS market_data_180d (
+            timestamp INTEGER PRIMARY KEY,
+            close_btc REAL,
+            close_eth REAL
+        )
+    ''')
 
-            df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-            return df[['timestamp', 'close']]
-
-        except Exception as e:
-            logger.error(f"Error fetching data for {symbol}: {str(e)}")
-            if attempt < max_retries - 1:
-                time.sleep(2)  # Задержка перед повторной попыткой
-            else:
-                logger.error(f"Max retries reached for {symbol}")
-                return pd.DataFrame()
+    conn.commit()
+    conn.close()
 
 
-def calculate_metrics(btc_data, eth_data):
-	"""Вычисление метрик спреда между BTC и ETH"""
-	if btc_data.empty or eth_data.empty:
-		raise ValueError("Empty data received for BTC or ETH")
+def get_data(exchange, symbol, timeframe='1m', hours=None, days=None):
+    all_data = []
+    if hours:
+        since = int((datetime.utcnow() - timedelta(hours=hours)).timestamp() * 1000)  # Время начала (за последние часы)
+    elif days:
+        since = int((datetime.utcnow() - timedelta(days=days)).timestamp() * 1000)  # Время начала (за последние дни)
 
-	merged = pd.merge(btc_data, eth_data, on='timestamp', suffixes=('_btc', '_eth'))
+    while True:
+        ohlcv = exchange.fetch_ohlcv(symbol, timeframe=timeframe, since=since,
+                                    limit=1000)  # Binance ограничение в 1000 свечей
+        if not ohlcv:
+            break
 
-	# Рассчитываем соотношение BTC/ETH
-	merged['btc_to_eth'] = merged['close_btc'] / merged['close_eth']
+        df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
+        all_data.append(df)
 
-	# Исключаем нулевые и аномальные значения
-	merged = merged[merged['close_eth'] > 0]
+        since = int(df['timestamp'].iloc[-1]) + 1  # Сдвигаем начало запроса на последнюю загруженную свечу
+        if len(df) < 1000:  # Если Binance вернул меньше 1000 свечей, значит данные закончились
+            break
 
-	avg_ratio = merged['btc_to_eth'].mean()
-	merged['btc_as_eth'] = merged['close_btc'] / avg_ratio
+    # Объединяем все части данных
+    full_df = pd.concat(all_data, ignore_index=True)
+    full_df['timestamp'] = pd.to_datetime(full_df['timestamp'], unit='ms')
 
-	# Процентная разница с защитой от деления на ноль
-	merged['percentage_diff'] = merged.apply(
-		lambda row: ((row['btc_as_eth'] - row['close_eth']) / row['close_eth']) * 100,
-		axis=1
-	)
+    full_df['timestamp'] = full_df['timestamp'].dt.tz_localize('UTC').dt.tz_convert('Europe/Moscow')  # Преобразуем в Москву (UTC+3)
 
-	return merged
+    return full_df[['timestamp', 'close']]
 
+def calculate_and_store_metrics(btc_data, eth_data, table_name):
+    """Вычисление метрик и сохранение в базу"""
+    if btc_data.empty or eth_data.empty:
+        logger.error("Ошибка: пустые данные")
+        return
 
-def format_data(df, col_name):
-	"""Форматирование данных для Lightweight Charts"""
-	return [
-		{
-			"time": int(row["timestamp"].timestamp()),  # Unix timestamp в секундах
-			"value": float(row[col_name])  # Явное преобразование к float
-		}
-		for _, row in df.iterrows()
-	]
+    merged = pd.merge(btc_data, eth_data, on='timestamp', suffixes=('_btc', '_eth'))
+    merged['btc_to_eth'] = merged['close_btc'] / merged['close_eth']
+    avg_ratio = merged['btc_to_eth'].mean()
+    merged['btc_as_eth'] = merged['close_btc'] / avg_ratio
 
-
-def save_to_json(data, filename="chart_data.json"):
-	"""Сохранение данных в JSON файл"""
-	try:
-		with open(filename, "w") as f:
-			json.dump(data, f, indent=4)
-		logger.info(f"✅ JSON файл {filename} успешно сохранен!")
-		return True
-	except Exception as e:
-		logger.error(f"Error saving JSON file: {str(e)}")
-		return False
+    conn = sqlite3.connect("market_data.db")
+    merged[['timestamp', 'close_btc', 'close_eth']].to_sql(table_name, conn, if_exists='replace', index=False)
+    conn.close()
+    logger.info(f"Данные сохранены в {table_name}")
 
 
 def main():
-	"""Основная функция"""
-	exchange = initialize_exchange()
+    """Основная функция"""
+    exchange = initialize_exchange()
+    create_tables()
 
-	# Загружаем данные
-	btc_data = fetch_data(exchange, 'BTC/USDT', '1h', days=3)
-	eth_data = fetch_data(exchange, 'ETH/USDT', '1h', days=3)
+    btc_data_24h = get_data(exchange, 'BTC/USDT', '1m', hours=24)
+    eth_data_24h = get_data(exchange, 'ETH/USDT', '1m', hours=24)
+    btc_data_180d = get_data(exchange, 'BTC/USDT', '1d', days=180)
+    eth_data_180d = get_data(exchange, 'ETH/USDT', '1d', days=180)
 
-	if btc_data.empty or eth_data.empty:
-		logger.error("Не удалось загрузить данные для BTC или ETH")
-		return
-
-	# Вычисляем метрики
-	try:
-		merged = calculate_metrics(btc_data, eth_data)
-	except ValueError as e:
-		logger.error(str(e))
-		return
-
-	# Форматируем данные для графиков
-	chart_data = {
-		"btc": format_data(merged, "close_btc"),
-		"eth": format_data(merged, "close_eth"),
-		"btc_as_eth": format_data(merged, "btc_as_eth"),
-		"percentage_diff": format_data(merged, "percentage_diff"),
-	}
-
-	# Сохраняем в файл
-	save_to_json(chart_data, filename="data/chart_data.json")
+    calculate_and_store_metrics(btc_data_24h, eth_data_24h, "market_data_24h")
+    calculate_and_store_metrics(btc_data_180d, eth_data_180d, "market_data_180d")
 
 
 if __name__ == "__main__":
-	main()
+    main()
