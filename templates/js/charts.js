@@ -96,3 +96,4 @@ function formatChartData(data) {
         };
     }).filter(Boolean);
 }
+
