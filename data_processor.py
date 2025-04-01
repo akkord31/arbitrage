@@ -38,7 +38,8 @@ class DataProcessor:
             'btc_as_eth': [],
             'btc_as_eth_norm': [],  # Нормализованный BTC
             'eth_norm': [],  # Нормализованный ETH
-            'percentage_diff': []
+            'percentage_diff': [],
+            'relative_spread': []
         }
 
         data_24h, avg_24h = calculate_metrics(raw_data_24h)
@@ -65,6 +66,11 @@ class DataProcessor:
                 logger.warning(f"Ошибка обработки записи: {e}")
             except Exception as e:
                 logger.error(f"Ошибка нормализации данных: {e}")
+
+        result['relative_spread'].append(
+            {'time': pd.to_datetime(data_180d['timestamp'][0]).timestamp(), 'value': data_180d['percentage_diff_normalized'][0]})
+        result['relative_spread'].append(
+            {'time': pd.to_datetime(data_24h.iloc[-1]['timestamp']).timestamp(), 'value': data_24h.iloc[-1]['percentage_diff_normalized']})
 
         return result
 
