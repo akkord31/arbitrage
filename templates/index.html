@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BTC/ETH Arbitrage Monitor</title>
     <link rel="stylesheet" href="css/styles.css">
-    <!-- Подключаем Lightweight Charts ПЕРЕД вашими скриптами -->
+    <!-- Подключаем Lightweight -->
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <script>
         // Проверка загрузки библиотеки
@@ -55,6 +55,11 @@
     <div class="chart-container">
         <div class="chart-title">Percentage Difference (%)</div>
         <div id="chart-diff"></div>
+    </div>
+
+    <div class="chart-container">
+        <div class="chart-title">Normalized Prices</div>
+        <div id="chart-normalized"></div>
     </div>
 
     <button class="refresh-btn" id="refresh-btn">Refresh Data</button>

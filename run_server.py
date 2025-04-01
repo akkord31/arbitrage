@@ -9,7 +9,9 @@ import json
 from pathlib import Path
 import logging
 
+from data_processor import DataProcessor
 import pull_data
+
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -57,11 +59,38 @@ class AutoRefreshHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 		try:
 			if self.path.startswith('/api/market-data'):
 				return self.handle_market_data()
+			elif self.path.startswith('/api/processed-data'):  # Новый эндпоинт
+				return self.handle_processed_data()
 
-			# Все остальные запросы
 			return super().do_GET()
 		except Exception as e:
 			logger.error(f"Request handling error: {e}")
+			self.send_error(500, "Internal Server Error")
+
+	def handle_processed_data(self):
+		"""Отдает полностью обработанные данные для фронтенда"""
+		try:
+			# Получаем параметр table из запроса
+			table_name = '24h'
+			if '?' in self.path:
+				query = self.path.split('?')[1]
+				params = dict(p.split('=') for p in query.split('&'))
+				table_name = params.get('table', '24h')
+
+			# Получаем обработанные данные
+			processed_data = DataProcessor.get_processed_data(table_name)
+			if not processed_data:
+				self.send_error(404, "Data not found")
+				return
+
+			# Отправляем ответ
+			self.send_response(200)
+			self.send_header('Content-Type', 'application/json')
+			self.end_headers()
+			self.wfile.write(json.dumps(processed_data).encode())
+
+		except Exception as e:
+			logger.error(f"Processed data error: {e}")
 			self.send_error(500, "Internal Server Error")
 
 	def handle_market_data(self):

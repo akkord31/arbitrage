@@ -1,11 +1,14 @@
 // Глобальные переменные для хранения экземпляров графиков
 const chartInstances = {};
 
-// Инициализация приложения
 async function initApp() {
     try {
         // 1. Проверяем наличие всех контейнеров для графиков
-        const requiredContainers = ['chart-btc', 'chart-eth', 'chart-btc-eth', 'chart-diff'];
+        const requiredContainers = [
+            'chart-btc', 'chart-eth', 'chart-btc-eth',
+            'chart-normalized', 'chart-diff'
+        ];
+
         const containersReady = requiredContainers.every(id => {
             const element = document.getElementById(id);
             if (!element) console.error(`Контейнер #${id} не найден`);
@@ -18,11 +21,48 @@ async function initApp() {
         }
 
         // 2. Создаем графики с начальными пустыми данными
-        chartInstances.btc = createSafeChart('chart-btc', [], '#F7931A');
-        chartInstances.eth = createSafeChart('chart-eth', [], '#627EEA');
-        chartInstances.btcEth = createSafeChart('chart-btc-eth', [], '#ED4B9E');
-        chartInstances.diff = createSafeChart('chart-diff', [], '#2EC973');
+        chartInstances.btcUsdt = createMultiSeriesChart('chart-btc', [{
+            id: 'btc_usdt',
+            seriesType: 'addLineSeries',
+            color: '#F7931A',
+            title: 'BTC/USDT Price'
+        }]);
 
+        chartInstances.ethUsdt = createMultiSeriesChart('chart-eth', [{
+            id: 'eth_usdt',
+            seriesType: 'addLineSeries',
+            color: '#627EEA',
+            title: 'ETH/USDT Price'
+        }]);
+
+        chartInstances.btcInEth = createMultiSeriesChart('chart-btc-eth', [{
+            id: 'btc_in_eth',
+            seriesType: 'addLineSeries',
+            color: '#FF9900',
+            title: 'BTC in ETH Units'
+        }]);
+
+        chartInstances.priceDiff = createMultiSeriesChart('chart-diff', [{
+            id: 'price_difference',
+            seriesType: 'addLineSeries',
+            color: '#ED4B9E',
+            title: 'Price Difference (%)'
+        }]);
+
+        chartInstances.normalized = createMultiSeriesChart('chart-normalized', [
+            {
+                id: 'btc_normalized',
+                seriesType: 'addLineSeries',
+                color: '#F7931A',
+                title: 'BTC Normalized'
+            },
+            {
+                id: 'eth_normalized',
+                seriesType: 'addLineSeries',
+                color: '#627EEA',
+                title: 'ETH Normalized'
+            }
+        ]);
         // 3. Загружаем данные
         await updateCharts();
 
@@ -34,30 +74,28 @@ async function initApp() {
         showError('Ошибка при запуске приложения');
     }
 }
-
 // Обновление данных графиков
 async function updateCharts() {
     try {
-        // Показываем индикатор загрузки
         const loader = document.getElementById('loading-indicator');
         if (loader) loader.style.display = 'block';
 
-        // Получаем данные
         const data = await fetchData();
-        if (!data) {
-            throw new Error('Данные не получены');
+        if (!data) throw new Error('Данные не получены');
+
+        // Обновляем все графики
+        updateChartIfValid('btcUsdt', 'btc_usdt', data.btc);
+        updateChartIfValid('ethUsdt', 'eth_usdt', data.eth);
+        updateChartIfValid('btcInEth', 'btc_in_eth', data.btc_as_eth);
+        updateChartIfValid('priceDiff', 'price_difference', data.percentage_diff);
+
+        if (data.btc_norm && data.eth_norm) {
+            updateChartIfValid('normalized', 'btc_normalized', data.btc_norm);
+            updateChartIfValid('normalized', 'eth_normalized', data.eth_norm);
         }
 
-        // Обновляем каждый график
-        updateChartIfValid('btc', data.btc);
-        updateChartIfValid('eth', data.eth);
-        updateChartIfValid('btcEth', data.btc_as_eth);
-        updateChartIfValid('diff', data.percentage_diff);
-
-        // Обновляем статистику
         updateStats(data);
 
-        // Обновляем время последнего обновления
         const lastUpdateEl = document.getElementById('last-update');
         if (lastUpdateEl) {
             lastUpdateEl.textContent = `Последнее обновление: ${new Date().toLocaleString()}`;
@@ -67,16 +105,33 @@ async function updateCharts() {
         console.error('Ошибка обновления графиков:', error);
         showError(`Ошибка обновления: ${error.message}`);
     } finally {
-        // Скрываем индикатор загрузки
         const loader = document.getElementById('loading-indicator');
         if (loader) loader.style.display = 'none';
     }
 }
 
-// Обновление конкретного графика с проверкой данных
-function updateChartIfValid(chartName, data) {
+// Вспомогательная функция для создания простого графика с одной серией
+function createSingleChart(containerId, initialData, color, title) {
+    return createMultiSeriesChart(containerId, [
+        {
+            id: 'main',
+            seriesType: 'addLineSeries',
+            color: color,
+            title: title,
+            data: formatChartData(initialData)
+        }
+    ]);
+}
+
+
+function updateChartIfValid(chartName, seriesName, data) {
     if (!chartInstances[chartName]) {
         console.warn(`График ${chartName} не инициализирован`);
+        return;
+    }
+
+    if (!chartInstances[chartName].series[seriesName]) {
+        console.warn(`Серия ${seriesName} не найдена в графике ${chartName}`);
         return;
     }
 
@@ -86,28 +141,9 @@ function updateChartIfValid(chartName, data) {
     }
 
     try {
-        // Фильтруем и форматируем данные
-        const validData = data
-            .map(item => {
-                if (!item) return null;
-
-                // Преобразуем время в Unix timestamp
-                const time = typeof item.time === 'number' ? item.time :
-                            new Date(item.time).getTime() / 1000;
-
-                const value = parseFloat(item.value);
-
-                if (isNaN(time) || isNaN(value)) return null;
-
-                return { time, value };
-            })
-            .filter(item => item !== null)
-            .sort((a, b) => a.time - b.time);
-
+        const validData = formatChartData(data);
         if (validData.length > 0) {
-            chartInstances[chartName].series.setData(validData);
-        } else {
-            console.warn(`Нет валидных данных для графика ${chartName}`);
+            chartInstances[chartName].series[seriesName].setData(validData);
         }
     } catch (error) {
         console.error(`Ошибка обновления графика ${chartName}:`, error);
