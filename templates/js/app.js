@@ -1,5 +1,6 @@
 // Глобальные переменные для хранения экземпляров графиков
 const chartInstances = {};
+let autoRefreshTimer = null;
 const BTC_COLOR = "#FF9900"
 const ETH_COLOR = "#627EEA"
 async function initApp() {
@@ -93,8 +94,28 @@ async function initApp() {
         // 3. Загружаем данные
         await updateCharts();
 
-        // 4. Настраиваем кнопку обновления
-        document.getElementById('refresh-btn')?.addEventListener('click', updateCharts);
+        initAutoRefresh(60);
+        setTimeout(() => initAutoRefresh(), 2000);
+        const toggleBtn = document.getElementById('toggle-auto-refresh');
+        let autoRefreshEnabled = true;
+
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+                autoRefreshEnabled = !autoRefreshEnabled;
+
+                if (autoRefreshEnabled) {
+                    startAutoRefresh(60);
+                    document.getElementById('auto-refresh-text').textContent = 'Автообновление: Вкл';
+                    toggleBtn.classList.remove('btn-danger');
+                    toggleBtn.classList.add('btn-secondary');
+                } else {
+                    if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+                    document.getElementById('auto-refresh-text').textContent = 'Автообновление: Выкл';
+                    toggleBtn.classList.remove('btn-secondary');
+                    toggleBtn.classList.add('btn-danger');
+                }
+            });
+        }
 
     } catch (error) {
         console.error('Ошибка инициализации приложения:', error);
@@ -102,6 +123,54 @@ async function initApp() {
     }
 }
 
+function initAutoRefresh() {
+    const toggleBtn = document.getElementById('toggle-auto-refresh');
+    if (!toggleBtn) return;
+
+    let autoRefreshEnabled = true;
+    startAutoRefresh(60); // 60 секунд
+
+    toggleBtn.addEventListener('click', () => {
+        autoRefreshEnabled = !autoRefreshEnabled;
+
+        if (autoRefreshEnabled) {
+            startAutoRefresh(60);
+            document.getElementById('auto-refresh-text').textContent = 'Автообновление: Вкл';
+            toggleBtn.classList.remove('btn-danger');
+            toggleBtn.classList.add('btn-secondary');
+        } else {
+            stopAutoRefresh();
+            document.getElementById('auto-refresh-text').textContent = 'Автообновление: Выкл';
+            toggleBtn.classList.remove('btn-secondary');
+            toggleBtn.classList.add('btn-danger');
+        }
+    });
+}
+
+function startAutoRefresh(intervalSeconds) {
+    // Останавливаем предыдущий таймер, если есть
+    if (autoRefreshTimer) {
+        clearInterval(autoRefreshTimer);
+    }
+
+    // Запускаем новый таймер
+    autoRefreshTimer = setInterval(async () => {
+        try {
+            console.log('Автоматическое обновление данных...');
+            await updateCharts();
+        } catch (error) {
+            console.error('Ошибка при автоматическом обновлении:', error);
+        }
+    }, intervalSeconds * 1000);
+}
+
+// Остановка автообновления
+function stopAutoRefresh() {
+    if (autoRefreshTimer) {
+        clearInterval(autoRefreshTimer);
+        autoRefreshTimer = null;
+    }
+}
 // Обновление данных графиков
 async function updateCharts() {
     try {
@@ -109,7 +178,10 @@ async function updateCharts() {
         if (loader) loader.style.display = 'block';
 
         const data = await fetchData();
-        if (!data) throw new Error('Данные не получены');
+        if (!data) {
+            console.log("No data received, skipping chart update");
+            return;
+        }
 
         // Обновляем все графики
         updateChartIfValid('btcUsdt', 'btc_usdt', data.btc);
@@ -133,7 +205,9 @@ async function updateCharts() {
 
         const lastUpdateEl = document.getElementById('last-update');
         if (lastUpdateEl) {
-            lastUpdateEl.textContent = `Последнее обновление: ${new Date().toLocaleString()}`;
+            const now = new Date();
+            lastUpdateEl.textContent = `Последнее обновление: ${now.toLocaleTimeString()}`;
+            lastUpdateEl.title = now.toString();
         }
 
     } catch (error) {
@@ -144,37 +218,25 @@ async function updateCharts() {
         if (loader) loader.style.display = 'none';
     }
 }
-
-// Вспомогательная функция для создания простого графика с одной серией
-function createSingleChart(containerId, initialData, color, title) {
-    return createMultiSeriesChart(containerId, [
-        {
-            id: 'main',
-            seriesType: 'addLineSeries',
-            color: color,
-            title: title,
-            data: formatChartData(initialData)
-        }
-    ]);
-}
-
+window.addEventListener('beforeunload', () => {
+    if (autoRefreshTimer) {
+        clearInterval(autoRefreshTimer);
+    }
+});
 
 function updateChartIfValid(chartName, seriesName, data) {
     if (!chartInstances[chartName]) {
         console.warn(`График ${chartName} не инициализирован`);
         return;
     }
-
     if (!chartInstances[chartName].series[seriesName]) {
         console.warn(`Серия ${seriesName} не найдена в графике ${chartName}`);
         return;
     }
-
     if (!Array.isArray(data)) {
         console.warn(`Некорректные данные для графика ${chartName}`);
         return;
     }
-
     try {
         const validData = formatChartData(data);
         if (validData.length > 0) {
@@ -185,7 +247,6 @@ function updateChartIfValid(chartName, seriesName, data) {
     }
 }
 
-// Обновление статистики
 function updateStats(data) {
     if (!data?.percentage_diff || !Array.isArray(data.percentage_diff)) {
         console.warn('Нет данных для статистики');

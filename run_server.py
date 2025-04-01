@@ -142,6 +142,22 @@ class AutoRefreshHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 		finally:
 			conn.close()
 
+	@classmethod
+	def start_background_updater(cls, interval=60):
+		def updater():
+			while True:
+				try:
+					logger.info(f"Запуск обновления данных в {time.ctime()}...")  # Логируем время
+					db_utils.main()
+					logger.info("Данные успешно обновлены")
+				except Exception as e:
+					logger.error(f"Ошибка: {e}")
+				time.sleep(interval)
+
+		thread = threading.Thread(target=updater, daemon=True)
+		thread.start()
+		logger.info("Фоновый поток для обновления данных запущен")  # Подтверждение запуска
+		return thread
 
 def fetch_from_sqlite(table_name):
 	"""Получаем данные из SQLite"""
@@ -209,6 +225,7 @@ def run_server(port=8000):
 	db_utils.main()
 
 	init_database()
+	AutoRefreshHTTPRequestHandler.start_background_updater()
 	check_database()  # Добавляем проверку
 
 	try:

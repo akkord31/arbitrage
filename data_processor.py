@@ -79,49 +79,52 @@ class DataProcessor:
 
     @staticmethod
     def get_processed_data():
-        """Получение и обработка данных из БД"""
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-
+        """Получение и обработка данных из БД с улучшенной обработкой ошибок"""
+        conn = None
         try:
-            # Проверяем существование таблицы 24h
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?",
-                           (f'market_data_24h',))
-            if not cursor.fetchone():
+            conn = sqlite3.connect(DB_PATH, timeout=30)
+            conn.row_factory = sqlite3.Row
+
+            # Проверяем существование таблиц
+            cursor = conn.cursor()
+            for table in ['market_data_24h', 'market_data_180d']:
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,))
+                if not cursor.fetchone():
+                    logger.error(f"Таблица {table} не найдена в базе данных")
+                    return None
+
+            # Получаем данные с обработкой возможных ошибок
+            try:
+                cursor.execute("""
+                    SELECT timestamp, close_btc, close_eth 
+                    FROM market_data_24h 
+                    ORDER BY timestamp
+                """)
+                raw_data_24h = [dict(row) for row in cursor.fetchall()]
+
+                cursor.execute("""
+                    SELECT timestamp, close_btc, close_eth 
+                    FROM market_data_180d 
+                    ORDER BY timestamp
+                """)
+                raw_data_180d = [dict(row) for row in cursor.fetchall()]
+
+                if not raw_data_24h or not raw_data_180d:
+                    logger.error("Одна из таблиц не содержит данных")
+                    return None
+
+                return DataProcessor.process_market_data(raw_data_24h, raw_data_180d)
+
+            except sqlite3.Error as e:
+                logger.error(f"Ошибка при выполнении SQL-запроса: {e}")
                 return None
 
-            # Проверяем существование таблицы 180d
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?",
-                           (f'market_data_180d',))
-            if not cursor.fetchone():
-                return None
-
-            # Получаем данные
-            cursor.execute(f"""
-                SELECT timestamp, close_btc, close_eth
-                FROM market_data_24h
-                ORDER BY timestamp
-            """)
-
-            raw_data_24h = [dict(row) for row in cursor.fetchall()]
-
-            # Получаем данные
-            cursor.execute(f"""
-                SELECT timestamp, close_btc, close_eth
-                FROM market_data_180d
-                ORDER BY timestamp
-            """)
-            raw_data_180d = [dict(row) for row in cursor.fetchall()]
-
-
-            return DataProcessor.process_market_data(raw_data_24h, raw_data_180d)
-
-        except sqlite3.Error as e:
-            logger.error(f"Ошибка БД: {e}")
+        except Exception as e:
+            logger.error(f"Неожиданная ошибка при получении данных: {e}")
             return None
         finally:
-            conn.close()
+            if conn:
+                conn.close()
 
 
 def calculate_metrics(raw_data):

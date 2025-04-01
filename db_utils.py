@@ -76,6 +76,7 @@ def get_data(exchange, symbol, timeframe='1m', hours=None, days=None):
 
     return full_df[['timestamp', 'close']]
 
+
 def save_data_in_db(btc_data, eth_data, table_name):
     """Вычисление метрик и сохранение в базу"""
     if btc_data.empty or eth_data.empty:
@@ -84,10 +85,27 @@ def save_data_in_db(btc_data, eth_data, table_name):
 
     merged = pd.merge(btc_data, eth_data, on='timestamp', suffixes=('_btc', '_eth'))
     conn = sqlite3.connect("market_data.db")
-    merged[['timestamp', 'close_btc', 'close_eth']].to_sql(table_name, conn, if_exists='replace',
-                                                                         index=False)
+
+    # Проверяем существующие данные
+    existing = pd.read_sql(f"SELECT timestamp FROM {table_name}", conn)
+
+    # Фильтруем только новые данные
+    if not existing.empty:
+        merged = merged[~merged['timestamp'].isin(existing['timestamp'])]
+
+    if not merged.empty:
+        # Добавляем только новые данные
+        merged[['timestamp', 'close_btc', 'close_eth']].to_sql(
+            table_name,
+            conn,
+            if_exists='append',
+            index=False
+        )
+        logger.info(f"Добавлено {len(merged)} записей в {table_name}")
+    else:
+        logger.info(f"Нет новых данных для {table_name}")
+
     conn.close()
-    logger.info(f"Данные сохранены в {table_name}")
 
 def main():
     """Основная функция"""
