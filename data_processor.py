@@ -38,6 +38,7 @@ class DataProcessor:
             'btc_as_eth': [],
             'btc_as_eth_norm': [],  # Нормализованный BTC
             'eth_norm': [],  # Нормализованный ETH
+            'percentage_diff_norm': [],
             'percentage_diff': [],
             'relative_spread': []
         }
@@ -54,13 +55,15 @@ class DataProcessor:
                 btc_as_eth_norm = float(row.btc_as_eth_norm)
                 eth_norm = float(row.eth_norm)
                 percentage_diff_normalized = float(row.percentage_diff_normalized)
+                percentage_diff = float(row.percentage_diff)
 
                 result['btc'].append({'time': time, 'value': btc})
                 result['eth'].append({'time': time, 'value': eth})
                 result['btc_as_eth'].append({'time': time, 'value': btc_as_eth})
                 result['btc_as_eth_norm'].append({'time': time, 'value': btc_as_eth_norm})
                 result['eth_norm'].append({'time': time, 'value': eth_norm})
-                result['percentage_diff'].append({'time': time, 'value': percentage_diff_normalized})
+                result['percentage_diff_norm'].append({'time': time, 'value': percentage_diff_normalized})
+                result['percentage_diff'].append({'time': time, 'value': percentage_diff})
 
             except (ValueError, KeyError) as e:
                 logger.warning(f"Ошибка обработки записи: {e}")
@@ -159,5 +162,7 @@ def calculate_metrics(raw_data):
 
     # Вычисляем разницу нормализованных значений
     df['percentage_diff_normalized'] = df['btc_as_eth_norm'] - df['eth_norm']
+
+    df['percentage_diff'] = df['btc_as_eth'] - df['close_eth']
 
     return df, avg_ratio
