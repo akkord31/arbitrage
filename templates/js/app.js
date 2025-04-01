@@ -1,6 +1,7 @@
 // Глобальные переменные для хранения экземпляров графиков
 const chartInstances = {};
-
+const BTC_COLOR = "#FF9900"
+const ETH_COLOR = "#627EEA"
 async function initApp() {
     try {
         // 1. Проверяем наличие всех контейнеров для графиков
@@ -24,23 +25,31 @@ async function initApp() {
         chartInstances.btcUsdt = createMultiSeriesChart('chart-btc', [{
             id: 'btc_usdt',
             seriesType: 'addLineSeries',
-            color: '#F7931A',
+            color: BTC_COLOR,
             title: 'BTC/USDT Price'
         }]);
 
         chartInstances.ethUsdt = createMultiSeriesChart('chart-eth', [{
             id: 'eth_usdt',
             seriesType: 'addLineSeries',
-            color: '#627EEA',
+            color: ETH_COLOR,
             title: 'ETH/USDT Price'
         }]);
 
-        chartInstances.btcInEth = createMultiSeriesChart('chart-btc-eth', [{
+        chartInstances.btcInEth = createMultiSeriesChart('chart-btc-eth', [
+            {
             id: 'btc_in_eth',
             seriesType: 'addLineSeries',
-            color: '#FF9900',
+            color: BTC_COLOR,
             title: 'BTC in ETH Units'
-        }]);
+            },
+            {
+               id: 'eth_usdt',
+                seriesType: 'addLineSeries',
+                color: ETH_COLOR,
+                title: 'ETH Units'
+            }
+        ]);
 
         chartInstances.priceDiff = createMultiSeriesChart('chart-diff', [{
             id: 'price_difference',
@@ -53,13 +62,13 @@ async function initApp() {
             {
                 id: 'btc_normalized',
                 seriesType: 'addLineSeries',
-                color: '#F7931A',
+                color: BTC_COLOR,
                 title: 'BTC Normalized'
             },
             {
                 id: 'eth_normalized',
                 seriesType: 'addLineSeries',
-                color: '#627EEA',
+                color: ETH_COLOR,
                 title: 'ETH Normalized'
             }
         ]);
@@ -86,7 +95,10 @@ async function updateCharts() {
         // Обновляем все графики
         updateChartIfValid('btcUsdt', 'btc_usdt', data.btc);
         updateChartIfValid('ethUsdt', 'eth_usdt', data.eth);
+
         updateChartIfValid('btcInEth', 'btc_in_eth', data.btc_as_eth);
+        updateChartIfValid('btcInEth', 'eth_usdt', data.eth);
+
         updateChartIfValid('priceDiff', 'price_difference', data.percentage_diff);
 
         if (data.btc_norm && data.eth_norm) {

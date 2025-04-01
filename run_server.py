@@ -10,7 +10,7 @@ from pathlib import Path
 import logging
 
 from data_processor import DataProcessor
-import pull_data
+import db_utils
 
 
 # Настройка логирования
@@ -213,7 +213,7 @@ def check_database():
 
 def run_server(port=8000):
 	"""Запуск HTTP сервера"""
-	pull_data.main()
+	db_utils.main()
 
 	init_database()
 	check_database()  # Добавляем проверку

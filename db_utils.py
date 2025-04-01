@@ -76,22 +76,18 @@ def get_data(exchange, symbol, timeframe='1m', hours=None, days=None):
 
     return full_df[['timestamp', 'close']]
 
-def calculate_and_store_metrics(btc_data, eth_data, table_name):
+def save_data_in_db(btc_data, eth_data, table_name):
     """Вычисление метрик и сохранение в базу"""
     if btc_data.empty or eth_data.empty:
         logger.error("Ошибка: пустые данные")
         return
 
     merged = pd.merge(btc_data, eth_data, on='timestamp', suffixes=('_btc', '_eth'))
-    merged['btc_to_eth'] = merged['close_btc'] / merged['close_eth']
-    avg_ratio = merged['btc_to_eth'].mean()
-    merged['btc_as_eth'] = round(merged['close_btc'] / avg_ratio, 2)
-
     conn = sqlite3.connect("market_data.db")
-    merged[['timestamp', 'close_btc', 'close_eth', 'btc_as_eth']].to_sql(table_name, conn, if_exists='replace', index=False)
+    merged[['timestamp', 'close_btc', 'close_eth']].to_sql(table_name, conn, if_exists='replace',
+                                                                         index=False)
     conn.close()
     logger.info(f"Данные сохранены в {table_name}")
-
 
 def main():
     """Основная функция"""
@@ -104,8 +100,8 @@ def main():
     btc_data_180d = get_data(exchange, 'BTC/USDT', '1d', days=180)
     eth_data_180d = get_data(exchange, 'ETH/USDT', '1d', days=180)
 
-    calculate_and_store_metrics(btc_data_24h, eth_data_24h, "market_data_24h")
-    calculate_and_store_metrics(btc_data_180d, eth_data_180d, "market_data_180d")
+    save_data_in_db(btc_data_24h, eth_data_24h, "market_data_24h")
+    save_data_in_db(btc_data_180d, eth_data_180d, "market_data_180d")
 
 
 if __name__ == "__main__":
