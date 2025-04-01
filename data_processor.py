@@ -40,11 +40,27 @@ class DataProcessor:
             'eth_norm': [],  # Нормализованный ETH
             'percentage_diff_norm': [],
             'percentage_diff': [],
-            'relative_spread': []
+            'relative_spread': [],
+            "avg_ratio": 0,
+            'btc_as_eth_min': 0,  # Новый ключ для min btc_as_eth
+            'btc_as_eth_max': 0,  # Новый ключ для max btc_as_eth
+            'eth_min': 0,  # Новый ключ для min eth
+            'eth_max': 0   # Новый ключ для max eth
         }
 
         data_24h, avg_24h = calculate_metrics(raw_data_24h)
         data_180d, avg_180d = calculate_metrics(raw_data_180d)
+
+        # Вычисляем min и max
+        btc_as_eth_min = data_180d['btc_as_eth'].min()
+        btc_as_eth_max = data_180d['btc_as_eth'].max()
+        eth_min = data_180d['close_eth'].min()
+        eth_max = data_180d['close_eth'].max()
+        result['btc_as_eth_min'] = btc_as_eth_min
+        result['btc_as_eth_max'] = btc_as_eth_max
+        result['eth_min'] = eth_min
+        result['eth_max'] = eth_max
+        result['avg_ratio'] = avg_24h
 
         for row in data_24h.itertuples(index=False):
             try:
@@ -150,7 +166,7 @@ def calculate_metrics(raw_data):
 
     # Вычисляем соотношение BTC/ETH
     df['btc_to_eth'] = df['close_btc'] / df['close_eth']
-    avg_ratio = df['btc_to_eth'].mean()
+    avg_ratio = round(df['btc_to_eth'].mean(), 2)
 
     df = df.drop(columns=['btc_to_eth'])
 

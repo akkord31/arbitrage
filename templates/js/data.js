@@ -24,6 +24,12 @@ async function fetchData() {
             throw new Error("Invalid data format received");
         }
 
+        localStorage.setItem('avg_ratio', String(data.avg_ratio));
+        localStorage.setItem('btcMin', String(data.btc_as_eth_min));
+        localStorage.setItem('btcMax', String(data.btc_as_eth_max));
+        localStorage.setItem('ethMin', String(data.eth_min));
+        localStorage.setItem('ethMax', String(data.eth_max));
+
         return data;
 
     } catch (error) {

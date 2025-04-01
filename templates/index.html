@@ -10,7 +10,7 @@
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <script>
         // Проверка загрузки библиотеки
-        window.addEventListener('load', function() {
+        window.addEventListener('load', function () {
             if (typeof LightweightCharts === 'undefined') {
                 alert('ОШИБКА: Библиотека графиков не загрузилась. Проверьте интернет-соединение.');
             }
@@ -18,68 +18,79 @@
     </script>
 </head>
 <body>
-    <h1>BTC/ETH Arbitrage Monitor</h1>
-    <div id="loading-indicator" style="display:none; position:fixed; top:0; left:0; width:100%; height:4px; background:#2196F3; z-index:1000;">
-        <div id="loading-progress" style="height:100%; width:0%; background:#FFC107; transition:width 0.3s;"></div>
+<h1>BTC/ETH Arbitrage Monitor</h1>
+<div id="loading-indicator"
+     style="display:none; position:fixed; top:0; left:0; width:100%; height:4px; background:#2196F3; z-index:1000;">
+    <div id="loading-progress" style="height:100%; width:0%; background:#FFC107; transition:width 0.3s;"></div>
+</div>
+<div class="stats-container">
+    <div class="stat-box" id="current-spread">
+        <div>Current Spread</div>
+        <div id="spread-value">Loading...</div>
     </div>
-    <div class="stats-container">
-        <div class="stat-box" id="current-spread">
-            <div>Current Spread</div>
-            <div id="spread-value">Loading...</div>
-        </div>
-        <div class="stat-box" id="max-spread">
-            <div>Max Spread (24h)</div>
-            <div id="max-spread-value">Loading...</div>
-        </div>
-        <div class="stat-box" id="min-spread">
-            <div>Min Spread (24h)</div>
-            <div id="min-spread-value">Loading...</div>
-        </div>
+    <div class="stat-box" id="max-spread">
+        <div>Max Spread (24h)</div>
+        <div id="max-spread-value">Loading...</div>
     </div>
+    <div class="stat-box" id="min-spread">
+        <div>Min Spread (24h)</div>
+        <div id="min-spread-value">Loading...</div>
+    </div>
+</div>
 
-    <!-- Обновлённый контейнер для графиков -->
-    <div class="charts-row">
-        <div class="chart-container">
-            <div class="chart-title">BTC/USDT</div>
-            <div id="chart-btc"></div>
-        </div>
-        <div class="chart-container">
-            <div class="chart-title">ETH/USDT</div>
-            <div id="chart-eth"></div>
-        </div>
-        <div class="chart-container">
-            <div class="chart-title">BTC in ETH Units</div>
-            <div id="chart-btc-eth"></div>
-        </div>
-        <div class="chart-container">
-            <div class="chart-title">Normalized Prices</div>
-            <div id="chart-normalized"></div>
-        </div>
-    </div>
-
+<!-- Обновлённый контейнер для графиков -->
+<div class="charts-row">
     <div class="chart-container">
-        <div class="chart-title">Percentage Difference Norm (%)</div>
-        <div id="chart-diff-norm"></div>
+        <div class="chart-title">BTC/USDT</div>
+        <div id="chart-btc"></div>
     </div>
-
     <div class="chart-container">
-        <div class="chart-title">Percentage Difference (%)</div>
-        <div id="chart-diff"></div>
+        <div class="chart-title">ETH/USDT</div>
+        <div id="chart-eth"></div>
     </div>
-
-    <button id="toggle-auto-refresh" class="btn btn-secondary">
-        <span id="auto-refresh-text">Автообновление: Вкл или выкл бля</span>
-        <span id="auto-refresh-icon">🔄</span>
-    </button>
-
-    <div class="last-update" id="last-update">
-        Last updated: Loading...
+    <div class="chart-container">
+        <div class="chart-title">BTC in ETH Units</div>
+        <div id="chart-btc-eth"></div>
     </div>
+    <div class="chart-container">
+        <div class="chart-title">Normalized Prices</div>
+        <div id="chart-normalized"></div>
+    </div>
+</div>
 
-    <script src="js/charts.js"></script>
-    <script src="js/utils.js"></script>
-    <script src="js/data.js"></script>
+<div>
+    <label for="btc-input">BTC:</label>
+    <input type="number" id="btc-input" step="0.0001">
 
-    <script src="js/app.js"></script>
+    <label for="eth-input">ETH:</label>
+    <input type="number" id="eth-input" step="0.0001">
+
+    <button id="entry-button">Ввод</button>
+</div>
+
+<div class="chart-container">
+    <div class="chart-title">Percentage Difference Norm (%)</div>
+    <div id="chart-diff-norm"></div>
+</div>
+
+<div class="chart-container">
+    <div class="chart-title">Percentage Difference (%)</div>
+    <div id="chart-diff"></div>
+</div>
+ё12
+<button id="toggle-auto-refresh" class="btn btn-secondary">
+    <span id="auto-refresh-text">Автообновление: Вкл или выкл бля</span>
+    <span id="auto-refresh-icon">🔄</span>
+</button>
+
+<div class="last-update" id="last-update">
+    Last updated: Loading...
+</div>
+
+<script src="js/charts.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/data.js"></script>
+
+<script src="js/app.js"></script>
 </body>
 </html>

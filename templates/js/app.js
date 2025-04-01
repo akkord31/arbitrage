@@ -331,3 +331,123 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initApp();
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+    const entryButton = document.getElementById('entry-button');
+    if (entryButton) {
+        entryButton.addEventListener('click', handleEntry);
+    }
+
+    loadSavedEntryLine();
+});
+
+function handleEntry() {
+    const btcInput = parseFloat(document.getElementById('btc-input').value);
+    const ethInput = parseFloat(document.getElementById('eth-input').value);
+
+    if (isNaN(btcInput) || isNaN(ethInput)) {
+        alert("Введите корректные значения BTC и ETH");
+        return;
+    }
+
+    // Получаем сохранённое среднее соотношение BTC/ETH (его нужно передавать с сервера)
+    const avg_ratio = parseFloat(localStorage.getItem('avg_ratio'));
+    if (!avg_ratio) {
+        alert("Среднее соотношение BTC/ETH не найдено. Загрузите данные.");
+        return;
+    }
+
+    // Рассчитываем btc_as_eth
+    const btcAsEth = btcInput / avg_ratio;
+
+    // Получаем min и max значений для нормализации (тоже нужно получать с сервера)
+    const btcMin = parseFloat(localStorage.getItem('btcMin'));
+    const btcMax = parseFloat(localStorage.getItem('btcMax'));
+    const ethMin = parseFloat(localStorage.getItem('ethMin'));
+    const ethMax = parseFloat(localStorage.getItem('ethMax'));
+
+    if (!btcMin || !btcMax || !ethMin || !ethMax) {
+        alert("Нет данных для нормализации. Загрузите данные.");
+        return;
+    }
+
+    // Нормализуем btc_as_eth и ethInput
+    const btcAsEthNorm = (btcAsEth - btcMin) / (btcMax - btcMin);
+    const ethNorm = (ethInput - ethMin) / (ethMax - ethMin);
+
+    // Вычисляем процентную разницу
+    const entryLevel = btcAsEthNorm - ethNorm;
+
+    // Сохраняем в localStorage и рисуем линию
+    localStorage.setItem('entryLine', entryLevel);
+    drawEntryLine(entryLevel);
+}
+
+function loadSavedEntryLine() {
+    const savedEntryLevel = localStorage.getItem('entryLine');
+    if (savedEntryLevel) {
+        drawEntryLine(parseFloat(savedEntryLevel));
+    }
+}
+
+function drawEntryLine(level) {
+    if (!chartInstances.priceDiffNorm) return;
+
+    const chart = chartInstances.priceDiffNorm.chart;
+
+    // Проверяем, есть ли уже линия, чтобы избежать добавления множества одинаковых линий
+    if (chartInstances.priceDiffNorm.entryLine) {
+        chartInstances.priceDiffNorm.entryLine.remove(); // Убираем старую линию, если она есть
+    }
+
+    // Добавление серии для горизонтальной линии
+    const lineSeries = chart.addLineSeries({
+        color: 'red',
+        lineWidth: 2,
+        lineStyle: LightweightCharts.LineStyle.Dotted,
+        title: 'Entry'
+    });
+
+    // Данные для горизонтальной линии (фиксированное значение по оси Y)
+    const data = [
+        { time: 0, value: level }, // Начало линии (время 0)
+        { time: Math.floor(Date.now() / 1000), value: level } // Конец линии (текущее время)
+    ];
+
+    // Устанавливаем данные для линии
+    lineSeries.setData(data);
+
+    // Сохраняем серию линии для возможности удаления или обновления
+    chartInstances.priceDiffNorm.entryLine = lineSeries;
+}
+
+function drawEntryLine(level) {
+    if (!chartInstances.priceDiffNorm) return;
+
+    const chart = chartInstances.priceDiffNorm.chart;
+
+    // Проверяем, есть ли уже линия, чтобы избежать добавления множества одинаковых линий
+    if (chartInstances.priceDiffNorm.entryLine) {
+        chartInstances.priceDiffNorm.entryLine.remove(); // Убираем старую линию, если она есть
+    }
+
+    // Добавление серии для горизонтальной линии
+    const lineSeries = chart.addLineSeries({
+        color: 'red',
+        lineWidth: 2,
+        lineStyle: LightweightCharts.LineStyle.Dotted,
+        title: 'Entry'
+    });
+
+    // Данные для горизонтальной линии (фиксированное значение по оси Y)
+    const data = [
+        { time: 0, value: level }, // Начало линии (время 0)
+        { time: Math.floor(Date.now() / 1000), value: level } // Конец линии (текущее время)
+    ];
+
+    // Устанавливаем данные для линии
+    lineSeries.setData(data);
+
+    // Сохраняем серию линии для возможности удаления или обновления
+    chartInstances.priceDiffNorm.entryLine = lineSeries;
+}
