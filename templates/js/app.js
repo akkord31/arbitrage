@@ -66,12 +66,20 @@ async function initApp() {
             }
         ]);
 
-        chartInstances.priceDiff = createMultiSeriesChart('chart-diff', [{
+        chartInstances.priceDiff = createMultiSeriesChart('chart-diff', [
+            {
             id: 'price_difference',
             seriesType: 'addLineSeries',
             color: '#ED4B9E',
             title: 'Price Difference (%)'
-        }]);
+            },
+            {
+                id: 'relative_spread',
+                seriesType: 'addLineSeries',
+                color: '#01df31',
+                title: 'relative_spread (%)'
+            }
+        ]);
 
         // 3. Загружаем данные
         await updateCharts();
@@ -107,6 +115,7 @@ async function updateCharts() {
         }
 
         updateChartIfValid('priceDiff', 'price_difference', data.percentage_diff);
+        updateChartIfValid('priceDiff', 'relative_spread', data.relative_spread);
 
         updateStats(data);
 

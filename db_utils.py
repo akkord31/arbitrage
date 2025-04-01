@@ -65,7 +65,7 @@ def get_data(exchange, symbol, timeframe='1m', hours=None, days=None):
         all_data.append(df)
 
         since = int(df['timestamp'].iloc[-1]) + 1  # Сдвигаем начало запроса на последнюю загруженную свечу
-        if len(df) < 1000:  # Если Binance вернул меньше 1000 свечей, значит данные закончились
+        if len(df) < 999:  # Если Binance вернул меньше 1000 свечей, значит данные закончились
             break
 
     # Объединяем все части данных
