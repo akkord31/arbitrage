@@ -51,13 +51,6 @@ async function initApp() {
             }
         ]);
 
-        chartInstances.priceDiff = createMultiSeriesChart('chart-diff', [{
-            id: 'price_difference',
-            seriesType: 'addLineSeries',
-            color: '#ED4B9E',
-            title: 'Price Difference (%)'
-        }]);
-
         chartInstances.normalized = createMultiSeriesChart('chart-normalized', [
             {
                 id: 'btc_normalized',
@@ -72,6 +65,14 @@ async function initApp() {
                 title: 'ETH Normalized'
             }
         ]);
+
+        chartInstances.priceDiff = createMultiSeriesChart('chart-diff', [{
+            id: 'price_difference',
+            seriesType: 'addLineSeries',
+            color: '#ED4B9E',
+            title: 'Price Difference (%)'
+        }]);
+
         // 3. Загружаем данные
         await updateCharts();
 
@@ -83,6 +84,7 @@ async function initApp() {
         showError('Ошибка при запуске приложения');
     }
 }
+
 // Обновление данных графиков
 async function updateCharts() {
     try {
@@ -99,12 +101,12 @@ async function updateCharts() {
         updateChartIfValid('btcInEth', 'btc_in_eth', data.btc_as_eth);
         updateChartIfValid('btcInEth', 'eth_usdt', data.eth);
 
-        updateChartIfValid('priceDiff', 'price_difference', data.percentage_diff);
-
-        if (data.btc_norm && data.eth_norm) {
-            updateChartIfValid('normalized', 'btc_normalized', data.btc_norm);
+        if (data.btc_as_eth_norm && data.eth_norm) {
+            updateChartIfValid('normalized', 'btc_normalized', data.btc_as_eth_norm);
             updateChartIfValid('normalized', 'eth_normalized', data.eth_norm);
         }
+
+        updateChartIfValid('priceDiff', 'price_difference', data.percentage_diff);
 
         updateStats(data);
 

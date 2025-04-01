@@ -36,7 +36,7 @@ class DataProcessor:
             'btc': [],
             'eth': [],
             'btc_as_eth': [],
-            'btc_norm': [],  # Нормализованный BTC
+            'btc_as_eth_norm': [],  # Нормализованный BTC
             'eth_norm': [],  # Нормализованный ETH
             'percentage_diff': []
         }
@@ -50,10 +50,16 @@ class DataProcessor:
                 btc = float(row.close_btc)
                 eth = float(row.close_eth)
                 btc_as_eth = float(row.btc_as_eth)
+                btc_as_eth_norm = float(row.btc_as_eth_norm)
+                eth_norm = float(row.eth_norm)
+                percentage_diff_normalized = float(row.percentage_diff_normalized)
 
                 result['btc'].append({'time': time, 'value': btc})
                 result['eth'].append({'time': time, 'value': eth})
                 result['btc_as_eth'].append({'time': time, 'value': btc_as_eth})
+                result['btc_as_eth_norm'].append({'time': time, 'value': btc_as_eth_norm})
+                result['eth_norm'].append({'time': time, 'value': eth_norm})
+                result['percentage_diff'].append({'time': time, 'value': percentage_diff_normalized})
 
             except (ValueError, KeyError) as e:
                 logger.warning(f"Ошибка обработки записи: {e}")
@@ -125,11 +131,11 @@ def calculate_metrics(raw_data):
 
     # Нормализация
     scaler = MinMaxScaler()
-    df[['btc_as_eth_norm', 'close_eth_norm']] = scaler.fit_transform(
+    df[['btc_as_eth_norm', 'eth_norm']] = scaler.fit_transform(
         df[['btc_as_eth', 'close_eth']]
     )
 
     # Вычисляем разницу нормализованных значений
-    df['percentage_diff_normalized'] = df['btc_as_eth_norm'] - df['close_eth_norm']
+    df['percentage_diff_normalized'] = df['btc_as_eth_norm'] - df['eth_norm']
 
     return df, avg_ratio
