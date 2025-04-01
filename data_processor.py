@@ -30,7 +30,7 @@ class DataProcessor:
         ]
 
     @staticmethod
-    def process_market_data(raw_data):
+    def process_market_data(raw_data_24h, raw_data_180d):
         """Основная обработка рыночных данных с нормализацией"""
         result = {
             'btc': [],
@@ -41,8 +41,8 @@ class DataProcessor:
             'percentage_diff': []
         }
 
-        data_24h, avg_24h = calculate_metrics(raw_data)
-        data_180d, avg_180d = calculate_metrics(raw_data)
+        data_24h, avg_24h = calculate_metrics(raw_data_24h)
+        data_180d, avg_180d = calculate_metrics(raw_data_180d)
 
         for row in data_24h.itertuples(index=False):
             try:
@@ -69,28 +69,44 @@ class DataProcessor:
         return result
 
     @staticmethod
-    def get_processed_data(table_name='24h'):
+    def get_processed_data():
         """Получение и обработка данных из БД"""
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
 
         try:
-            # Проверяем существование таблицы
+            # Проверяем существование таблицы 24h
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?",
-                           (f'market_data_{table_name}',))
+                           (f'market_data_24h',))
+            if not cursor.fetchone():
+                return None
+
+            # Проверяем существование таблицы 180d
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+                           (f'market_data_180d',))
             if not cursor.fetchone():
                 return None
 
             # Получаем данные
             cursor.execute(f"""
                 SELECT timestamp, close_btc, close_eth
-                FROM market_data_{table_name}
+                FROM market_data_24h
                 ORDER BY timestamp
             """)
 
-            raw_data = [dict(row) for row in cursor.fetchall()]
-            return DataProcessor.process_market_data(raw_data)
+            raw_data_24h = [dict(row) for row in cursor.fetchall()]
+
+            # Получаем данные
+            cursor.execute(f"""
+                SELECT timestamp, close_btc, close_eth
+                FROM market_data_180d
+                ORDER BY timestamp
+            """)
+            raw_data_180d = [dict(row) for row in cursor.fetchall()]
+
+
+            return DataProcessor.process_market_data(raw_data_24h, raw_data_180d)
 
         except sqlite3.Error as e:
             logger.error(f"Ошибка БД: {e}")

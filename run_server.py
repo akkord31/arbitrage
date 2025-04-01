@@ -70,15 +70,8 @@ class AutoRefreshHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 	def handle_processed_data(self):
 		"""Отдает полностью обработанные данные для фронтенда"""
 		try:
-			# Получаем параметр table из запроса
-			table_name = '24h'
-			if '?' in self.path:
-				query = self.path.split('?')[1]
-				params = dict(p.split('=') for p in query.split('&'))
-				table_name = params.get('table', '24h')
-
 			# Получаем обработанные данные
-			processed_data = DataProcessor.get_processed_data(table_name)
+			processed_data = DataProcessor.get_processed_data()
 			if not processed_data:
 				self.send_error(404, "Data not found")
 				return
