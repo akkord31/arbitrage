@@ -30,19 +30,21 @@ class DataProcessor:
         ]
 
     @staticmethod
-    def process_market_data(raw_data):
+    def process_market_data(raw_data, normalization_data = None):
         """Основная обработка рыночных данных с нормализацией"""
         result = {
             'btc': [],
             'eth': [],
             'btc_as_eth': [],
-            'btc_as_eth_norm': [],  # Нормализованный BTC
-            'eth_norm': [],  # Нормализованный ETH
+            'btc_norm': [],
+            'eth_norm': [],
             'percentage_diff': []
         }
 
         data_24h, avg_24h = calculate_metrics(raw_data)
-        data_180d, avg_180d = calculate_metrics(raw_data)
+        #data_180d, avg_180d = calculate_metrics(raw_data)
+        if normalization_data:
+            field = float(normalization_data['field'])
 
         for row in data_24h.itertuples(index=False):
             try:
@@ -90,7 +92,17 @@ class DataProcessor:
             """)
 
             raw_data = [dict(row) for row in cursor.fetchall()]
-            return DataProcessor.process_market_data(raw_data)
+
+            cursor.execute("""
+                        SELECT timestamp, close_btc, close_eth
+                        FROM market_data_180d
+                        ORDER BY timestamp DESC
+                        LIMIT 1
+                    """)
+            normalization_point = cursor.fetchone()
+
+            normalization_data = dict(normalization_point) if normalization_point else None
+            return DataProcessor.process_market_data(raw_data, normalization_data)
 
         except sqlite3.Error as e:
             logger.error(f"Ошибка БД: {e}")
