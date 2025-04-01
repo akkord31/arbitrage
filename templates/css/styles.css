@@ -15,12 +15,12 @@ h1 {
 .chart-container {
     width: 100%;
     height: 400px;
-    margin: 20px 0;
     background: white;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     padding: 10px;
     box-sizing: border-box;
+    margin-bottom: 20px; /* Добавим отступ снизу для каждого графика */
 }
 
 .chart-title {
@@ -71,8 +71,22 @@ h1 {
     background: #2980b9;
 }
 
+/* Контейнер для первых четырех графиков */
+.charts-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 20px; /* Расстояние между графиками */
+}
+
+.chart-container:nth-child(-n+4) {
+    flex: 0 0 48%; /* Каждому из первых четырёх графиков даём по 48% ширины */
+}
+
+/* Для устройства с маленьким экраном (например, мобильные устройства) */
 @media (max-width: 768px) {
     .chart-container {
         height: 300px;
+        width: 100%; /* Каждый график занимает всю ширину экрана на мобильных устройствах */
     }
 }

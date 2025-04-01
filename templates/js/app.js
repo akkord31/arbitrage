@@ -7,7 +7,7 @@ async function initApp() {
         // 1. Проверяем наличие всех контейнеров для графиков
         const requiredContainers = [
             'chart-btc', 'chart-eth', 'chart-btc-eth',
-            'chart-normalized', 'chart-diff'
+            'chart-normalized', 'chart-diff-norm',
         ];
 
         const containersReady = requiredContainers.every(id => {
@@ -66,9 +66,9 @@ async function initApp() {
             }
         ]);
 
-        chartInstances.priceDiff = createMultiSeriesChart('chart-diff', [
+        chartInstances.priceDiffNorm = createMultiSeriesChart('chart-diff-norm', [
             {
-            id: 'price_difference',
+            id: 'price_difference_norm',
             seriesType: 'addLineSeries',
             color: '#ED4B9E',
             title: 'Price Difference (%)'
@@ -78,6 +78,15 @@ async function initApp() {
                 seriesType: 'addLineSeries',
                 color: '#01df31',
                 title: 'relative_spread (%)'
+            }
+        ]);
+
+        chartInstances.priceDiff = createMultiSeriesChart('chart-diff', [
+            {
+            id: 'price_difference',
+            seriesType: 'addLineSeries',
+            color: '#ED4B9E',
+            title: 'Price Difference (%)'
             }
         ]);
 
@@ -114,8 +123,11 @@ async function updateCharts() {
             updateChartIfValid('normalized', 'eth_normalized', data.eth_norm);
         }
 
+        updateChartIfValid('priceDiffNorm', 'price_difference_norm', data.percentage_diff_norm);
+        updateChartIfValid('priceDiffNorm', 'relative_spread', data.relative_spread);
+
         updateChartIfValid('priceDiff', 'price_difference', data.percentage_diff);
-        updateChartIfValid('priceDiff', 'relative_spread', data.relative_spread);
+
 
         updateStats(data);
 
