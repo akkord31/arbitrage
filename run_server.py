@@ -107,7 +107,7 @@ class AutoRefreshHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
 			# Оптимизированный запрос с лимитом
 			cursor.execute(f"""
-                SELECT timestamp, close_btc, close_eth, btc_as_eth
+                SELECT timestamp, close_btc, close_eth
                 FROM {table_name} 
                 ORDER BY timestamp DESC 
             """)
@@ -167,7 +167,7 @@ def fetch_from_sqlite(table_name):
 	try:
 		# Проверяем существование таблицы
 		cursor.execute(f"""
-            SELECT timestamp, close_btc, close_eth, btc_as_eth
+            SELECT timestamp, close_btc, close_eth
             FROM {table_name} 
             ORDER BY timestamp DESC
         """)

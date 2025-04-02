@@ -20,7 +20,7 @@ h1 {
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     padding: 10px;
     box-sizing: border-box;
-    margin-bottom: 20px; /* Добавим отступ снизу для каждого графика */
+    margin-bottom: 20px;
 }
 
 .chart-title {
@@ -42,7 +42,8 @@ h1 {
     padding: 15px;
     border-radius: 8px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    min-width: 200px;
+    width: 200px;
+    height: 50px;
     margin: 10px;
     text-align: center;
 }
@@ -54,10 +55,88 @@ h1 {
     margin-top: 20px;
 }
 
-.refresh-btn {
-    display: block;
+button {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.1s;
+    background: #3498db;
+    color: white;
+    margin-bottom: 10px;
+}
+
+button:hover {
+    background: #2980b9;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+input {
+    padding: 10px;
+    font-size: 16px;
+    border: 2px solid #ccc;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.3s;
+    margin-bottom: 10px;
+}
+
+input:focus {
+    border-color: #3498db;
+}
+
+/* Контейнер для первых четырех графиков */
+.charts-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.chart-container:nth-child(-n+4) {
+    flex: 0 0 48%;
+}
+
+.entry-box {
+    background: white;
+    border: 2px solid #3498db;
+    border-radius: 8px;
+    padding: 15px;
     margin: 20px auto;
-    padding: 10px 20px;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.entry-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #2c3e50;
+}
+
+.entry-box label {
+    font-size: 14px;
+    margin-right: 5px;
+}
+
+.entry-box input {
+    width: 80px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.entry-box button {
+    display: block;
+    width: 100%;
+    padding: 8px;
     background: #3498db;
     color: white;
     border: none;
@@ -67,26 +146,44 @@ h1 {
     transition: background 0.3s;
 }
 
-.refresh-btn:hover {
+.entry-box button:hover {
     background: #2980b9;
 }
 
-/* Контейнер для первых четырех графиков */
-.charts-row {
+.entry-result {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #2c3e50;
+    background: #ecf0f1;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.input-container {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 20px; /* Расстояние между графиками */
+    justify-content: center; /* Центрируем элементы по горизонтали */
+    align-items: center; /* Выравниваем по вертикали */
+    gap: 20px; /* Отступы между элементами */
+    flex-wrap: nowrap; /* ОТКЛЮЧАЕМ перенос строк */
+    max-width: 1000px; /* Достаточная ширина */
+    margin: 20px auto;
 }
 
-.chart-container:nth-child(-n+4) {
-    flex: 0 0 48%; /* Каждому из первых четырёх графиков даём по 48% ширины */
+.entry-box {
+    background: white;
+    border: 2px solid #3498db;
+    border-radius: 8px;
+    padding: 15px;
+    width: 300px; /* Фиксированная ширина для консистентности */
+    height: 200px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    flex-shrink: 0; /* Запрещаем сжатие */
 }
 
-/* Для устройства с маленьким экраном (например, мобильные устройства) */
 @media (max-width: 768px) {
     .chart-container {
         height: 300px;
-        width: 100%; /* Каждый график занимает всю ширину экрана на мобильных устройствах */
+        width: 100%;
     }
 }

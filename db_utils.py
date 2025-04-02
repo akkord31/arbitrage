@@ -26,7 +26,7 @@ def create_tables():
 
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS market_data_24h (
-            timestamp INTEGER PRIMARY KEY,
+            timestamp TEXT  PRIMARY KEY,
             close_btc REAL,
             close_eth REAL
         )
@@ -34,7 +34,7 @@ def create_tables():
 
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS market_data_180d (
-            timestamp INTEGER PRIMARY KEY,
+            timestamp TEXT PRIMARY KEY,
             close_btc REAL,
             close_eth REAL
         )
@@ -84,6 +84,12 @@ def save_data_in_db(btc_data, eth_data, table_name):
         return
 
     merged = pd.merge(btc_data, eth_data, on='timestamp', suffixes=('_btc', '_eth'))
+
+    # Преобразуем типы данных
+    merged['timestamp'] = pd.to_datetime(merged['timestamp'])
+    merged['close_btc'] = pd.to_numeric(merged['close_btc'], errors='coerce')
+    merged['close_eth'] = pd.to_numeric(merged['close_eth'], errors='coerce')
+
     conn = sqlite3.connect("market_data.db")
 
     # Проверяем существующие данные
@@ -94,14 +100,17 @@ def save_data_in_db(btc_data, eth_data, table_name):
         merged = merged[~merged['timestamp'].isin(existing['timestamp'])]
 
     if not merged.empty:
-        # Добавляем только новые данные
-        merged[['timestamp', 'close_btc', 'close_eth']].to_sql(
-            table_name,
-            conn,
-            if_exists='append',
-            index=False
-        )
-        logger.info(f"Добавлено {len(merged)} записей в {table_name}")
+        try:
+            # Добавляем только новые данные
+            merged[['timestamp', 'close_btc', 'close_eth']].to_sql(
+                table_name,
+                conn,
+                if_exists='append',
+                index=False
+            )
+            logger.info(f"Добавлено {len(merged)} записей в {table_name}")
+        except sqlite3.IntegrityError as e:
+            logger.error(f"Ошибка при вставке данных: {e}")
     else:
         logger.info(f"Нет новых данных для {table_name}")
 
