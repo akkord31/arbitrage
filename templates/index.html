@@ -58,14 +58,40 @@
     </div>
 </div>
 
-<div>
-    <label for="btc-input">BTC:</label>
-    <input type="number" id="btc-input" step="0.0001">
+<div class="input-container">
+    <div class="entry-box">
+        <div class="entry-title">Расчет входа</div>
+        <label for="btc-input">BTC:</label>
+        <input type="number" id="btc-input" step="0.0001">
 
-    <label for="eth-input">ETH:</label>
-    <input type="number" id="eth-input" step="0.0001">
+        <label for="eth-input">ETH:</label>
+        <input type="number" id="eth-input" step="0.0001">
 
-    <button id="entry-button">Ввод</button>
+        <button id="entry-button">Ввод</button>
+
+        <div class="entry-result" id="entry-result">
+            Вход расчитан если ты заходили по формуле btc = (eth * <span id="avg_ratio">Загрузка...</span>) ИЛИ НАОБОРОТ НАДО ПРОВЕРИТЬ
+        </div>
+    </div>
+
+    <div class="entry-box">
+        <div class="entry-title">Расчет цены по формуле</div>
+        <label for="btc-sum-input">Сумма BTC:</label>
+        <input type="number" id="btc-sum-input" step="0.0001">
+        ETH: <span id="calculated-price">Загрузка...</span>
+
+        <button id="calculate-price-btn">Рассчитать цену</button>
+
+        <div class="btc-sum-result" id="btc-sum-result">
+            Цена по формуле eth = btc + коэф%:
+            ВОЗМОЖНО НАОБОРОТ НАДО ПРОВЕРИТЬ
+        </div>
+    </div>
+
+    <div class="stat-box">
+        <div>Коэф масштабирования</div>
+        <div id="avg_ratio_stat">Loading...</div>
+    </div>
 </div>
 
 <div class="chart-container">
@@ -77,11 +103,6 @@
     <div class="chart-title">Percentage Difference (%)</div>
     <div id="chart-diff"></div>
 </div>
-ё12
-<button id="toggle-auto-refresh" class="btn btn-secondary">
-    <span id="auto-refresh-text">Автообновление: Вкл или выкл бля</span>
-    <span id="auto-refresh-icon">🔄</span>
-</button>
 
 <div class="last-update" id="last-update">
     Last updated: Loading...

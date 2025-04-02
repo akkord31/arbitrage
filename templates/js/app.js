@@ -269,10 +269,16 @@ function updateStats(data) {
         setStatValue('max-spread-value', maxDiff);
         setStatValue('min-spread-value', minDiff);
 
+        const avg = localStorage.getItem('avg_ratio')
+        setValue('avg_ratio', avg);
+        setValue('avg_ratio_stat', avg);
+
     } catch (error) {
         console.error('Ошибка обновления статистики:', error);
     }
 }
+
+
 
 // Установка значения статистики с форматированием
 function setStatValue(elementId, value) {
@@ -289,6 +295,13 @@ function setStatValue(elementId, value) {
     } else {
         element.style.color = '#333'; // Серый
     }
+}
+
+function setValue(elementId, value) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+
+    element.textContent = value;
 }
 
 // Показать сообщение об ошибке
@@ -395,9 +408,9 @@ function drawEntryLine(level) {
 
     const chart = chartInstances.priceDiffNorm.chart;
 
-    // Проверяем, есть ли уже линия, чтобы избежать добавления множества одинаковых линий
+    // Удаляем старую линию, если она существует
     if (chartInstances.priceDiffNorm.entryLine) {
-        chartInstances.priceDiffNorm.entryLine.remove(); // Убираем старую линию, если она есть
+        chartInstances.priceDiffNorm.entryLine.setData([]); // Очищаем данные старой линии
     }
 
     // Добавление серии для горизонтальной линии
@@ -405,13 +418,18 @@ function drawEntryLine(level) {
         color: 'red',
         lineWidth: 2,
         lineStyle: LightweightCharts.LineStyle.Dotted,
-        title: 'Entry'
+        title: 'Вход'
     });
+
+    // Получаем границы временного диапазона графика
+    const timeScale = chart.timeScale();
+    const visibleRange = timeScale.getVisibleRange();
+    if (!visibleRange) return;
 
     // Данные для горизонтальной линии (фиксированное значение по оси Y)
     const data = [
-        { time: 0, value: level }, // Начало линии (время 0)
-        { time: Math.floor(Date.now() / 1000), value: level } // Конец линии (текущее время)
+        { time: visibleRange.from, value: level }, // Начало линии (по видимому диапазону)
+        { time: visibleRange.to, value: level }   // Конец линии (по видимому диапазону)
     ];
 
     // Устанавливаем данные для линии
@@ -421,33 +439,15 @@ function drawEntryLine(level) {
     chartInstances.priceDiffNorm.entryLine = lineSeries;
 }
 
-function drawEntryLine(level) {
-    if (!chartInstances.priceDiffNorm) return;
+document.getElementById('calculate-price-btn').addEventListener('click', function () {
+    const btcSum = parseFloat(document.getElementById('btc-sum-input').value);
+    const avgRatio = parseFloat(localStorage.getItem('avg_ratio'));
 
-    const chart = chartInstances.priceDiffNorm.chart;
-
-    // Проверяем, есть ли уже линия, чтобы избежать добавления множества одинаковых линий
-    if (chartInstances.priceDiffNorm.entryLine) {
-        chartInstances.priceDiffNorm.entryLine.remove(); // Убираем старую линию, если она есть
+    if (!btcSum || !avgRatio) {
+        document.getElementById('calculated-price').innerText = "Введите сумму BTC и убедитесь, что avg_ratio доступен.";
+        return;
     }
 
-    // Добавление серии для горизонтальной линии
-    const lineSeries = chart.addLineSeries({
-        color: 'red',
-        lineWidth: 2,
-        lineStyle: LightweightCharts.LineStyle.Dotted,
-        title: 'Entry'
-    });
-
-    // Данные для горизонтальной линии (фиксированное значение по оси Y)
-    const data = [
-        { time: 0, value: level }, // Начало линии (время 0)
-        { time: Math.floor(Date.now() / 1000), value: level } // Конец линии (текущее время)
-    ];
-
-    // Устанавливаем данные для линии
-    lineSeries.setData(data);
-
-    // Сохраняем серию линии для возможности удаления или обновления
-    chartInstances.priceDiffNorm.entryLine = lineSeries;
-}
+    const calculatedPrice = btcSum * ( 1 + avgRatio / 100);
+    document.getElementById('calculated-price').innerText = calculatedPrice.toFixed(4);
+});
