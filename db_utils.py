@@ -1,3 +1,6 @@
+import sys
+from pathlib import Path
+
 import ccxt
 import sqlite3
 import pandas as pd
@@ -9,15 +12,39 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+_exchange_instance = None  # Глобальная переменная для хранения экземпляра биржи
+
 
 def initialize_exchange():
-    """Инициализация подключения к бирже"""
-    exchange = ccxt.binance({
-        'enableRateLimit': True,
-        'options': {'defaultType': 'spot'}
-    })
-    return exchange
+    """Инициализация подключения к бирже (Singleton)"""
+    global _exchange_instance
+    if _exchange_instance is None:  # Если объект ещё не создан, создаём его
+        _exchange_instance = ccxt.binance({
+            'enableRateLimit': True,
+            'options': {'defaultType': 'spot'}
+        })
+    return _exchange_instance  # Возвращаем существующий экземпляр
 
+def get_db_path():
+    """Получает правильный путь к базе данных, учитывая запуск как EXE и удаляет 'lib\\library.zip' из пути"""
+    if hasattr(sys, '_MEIPASS'):
+        # Если программа упакована в EXE, извлекаем базу данных из архивированного файла
+        base_path = sys._MEIPASS
+    else:
+        # Если запущено как скрипт, используем текущую директорию
+        base_path = Path(__file__).parent
+
+    # Преобразуем путь в строку для дальнейших манипуляций
+    base_path_str = str(base_path)
+
+    # Удаляем 'lib\library.zip' из пути, если она там есть
+    if 'lib\\library.zip' in base_path_str:
+        base_path_str = base_path_str.replace('lib\\library.zip', '')
+
+    # Возвращаем путь, добавив 'market_data.db'
+    db_path = Path(base_path_str) / 'market_data.db'
+
+    return db_path
 
 def create_tables():
     """Создание таблиц в SQLite"""
@@ -51,13 +78,13 @@ def create_tables():
 def get_data(exchange, symbol, timeframe='1m', hours=None, days=None):
     all_data = []
     if hours:
-        since = int((datetime.utcnow() - timedelta(hours=hours)).timestamp() * 1000)  # Время начала (за последние часы)
+        since = int((datetime.utcnow() - timedelta(hours=hours - 3)).timestamp() * 1000)  # Время начала (за последние часы)
     elif days:
         since = int((datetime.utcnow() - timedelta(days=days)).timestamp() * 1000)  # Время начала (за последние дни)
 
     while True:
         ohlcv = exchange.fetch_ohlcv(symbol, timeframe=timeframe, since=since,
-                                    limit=1000)  # Binance ограничение в 1000 свечей
+                                     limit=1000)  # Binance ограничение в 1000 свечей
         if not ohlcv:
             break
 
@@ -65,14 +92,15 @@ def get_data(exchange, symbol, timeframe='1m', hours=None, days=None):
         all_data.append(df)
 
         since = int(df['timestamp'].iloc[-1]) + 1  # Сдвигаем начало запроса на последнюю загруженную свечу
-        if len(df) < 999:  # Если Binance вернул меньше 1000 свечей, значит данные закончились
+        if len(df) < 1000:  # Если Binance вернул меньше 1000 свечей, значит данные закончились
             break
 
     # Объединяем все части данных
     full_df = pd.concat(all_data, ignore_index=True)
     full_df['timestamp'] = pd.to_datetime(full_df['timestamp'], unit='ms')
 
-    full_df['timestamp'] = full_df['timestamp'].dt.tz_localize('UTC').dt.tz_convert('Europe/Moscow')  # Преобразуем в Москву (UTC+3)
+    full_df['timestamp'] = full_df['timestamp'].dt.tz_localize('UTC').dt.tz_convert(
+        'Europe/Moscow')  # Преобразуем в Москву (UTC+3)
 
     return full_df[['timestamp', 'close']]
 
@@ -115,6 +143,7 @@ def save_data_in_db(btc_data, eth_data, table_name):
         logger.info(f"Нет новых данных для {table_name}")
 
     conn.close()
+
 
 def main():
     """Основная функция"""

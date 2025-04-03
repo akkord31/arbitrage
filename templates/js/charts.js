@@ -33,7 +33,8 @@ function createMultiSeriesChart(containerId, seriesConfig) {
             timeScale: {
                 borderColor: 'rgba(43, 43, 67, 0.15)',
                 timeVisible: true,
-                secondsVisible: true
+                secondsVisible: true,
+                barSpacing: 1
             }
         });
 

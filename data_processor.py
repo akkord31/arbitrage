@@ -1,13 +1,11 @@
 import sqlite3
-from pathlib import Path
-import json
-from datetime import datetime
 import logging
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
+import db_utils
 
-DB_PATH = Path(__file__).parent / "market_data.db"
+DB_PATH = db_utils.get_db_path()
 logger = logging.getLogger(__name__)
 
 
@@ -98,6 +96,7 @@ class DataProcessor:
         """Получение и обработка данных из БД с улучшенной обработкой ошибок"""
         conn = None
         try:
+            logger.info(f"Путь к бд: {DB_PATH}")
             conn = sqlite3.connect(DB_PATH, timeout=30)
             conn.row_factory = sqlite3.Row
 

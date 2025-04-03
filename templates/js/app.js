@@ -27,14 +27,14 @@ async function initApp() {
             id: 'btc_usdt',
             seriesType: 'addLineSeries',
             color: BTC_COLOR,
-            title: 'BTC/USDT Price'
+            title: 'BTC Price'
         }]);
 
         chartInstances.ethUsdt = createMultiSeriesChart('chart-eth', [{
             id: 'eth_usdt',
             seriesType: 'addLineSeries',
             color: ETH_COLOR,
-            title: 'ETH/USDT Price'
+            title: 'ETH Price'
         }]);
 
         chartInstances.btcInEth = createMultiSeriesChart('chart-btc-eth', [
@@ -96,6 +96,7 @@ async function initApp() {
 
         initAutoRefresh(60);
         setTimeout(() => initAutoRefresh(), 2000);
+
         const toggleBtn = document.getElementById('toggle-auto-refresh');
         let autoRefreshEnabled = true;
 
@@ -124,27 +125,7 @@ async function initApp() {
 }
 
 function initAutoRefresh() {
-    const toggleBtn = document.getElementById('toggle-auto-refresh');
-    if (!toggleBtn) return;
-
-    let autoRefreshEnabled = true;
-    startAutoRefresh(60); // 60 секунд
-
-    toggleBtn.addEventListener('click', () => {
-        autoRefreshEnabled = !autoRefreshEnabled;
-
-        if (autoRefreshEnabled) {
-            startAutoRefresh(60);
-            document.getElementById('auto-refresh-text').textContent = 'Автообновление: Вкл';
-            toggleBtn.classList.remove('btn-danger');
-            toggleBtn.classList.add('btn-secondary');
-        } else {
-            stopAutoRefresh();
-            document.getElementById('auto-refresh-text').textContent = 'Автообновление: Выкл';
-            toggleBtn.classList.remove('btn-secondary');
-            toggleBtn.classList.add('btn-danger');
-        }
-    });
+    startAutoRefresh(60);
 }
 
 function startAutoRefresh(intervalSeconds) {
