@@ -44,7 +44,8 @@ class DataProcessor:
             'percentage_diff_norm': [],
             'percentage_diff': [],
             'relative_spread': [],
-            "avg_ratio": 0,
+            "avg_ratio_24h": 0,
+            "avg_ratio_180d": 0,
             'btc_as_eth_min': 0,
             'btc_as_eth_max': 0,
             'eth_min': 0,
@@ -63,7 +64,8 @@ class DataProcessor:
         result['btc_as_eth_max'] = btc_as_eth_max
         result['eth_min'] = eth_min
         result['eth_max'] = eth_max
-        result['avg_ratio'] = avg_180d
+        result['avg_ratio_24h'] = avg_24h
+        result['avg_ratio_180d'] = avg_180d
 
         for row in data_24h.itertuples(index=False):
             try:

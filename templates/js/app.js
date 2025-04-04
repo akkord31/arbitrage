@@ -96,28 +96,6 @@ async function initApp() {
 
         initAutoRefresh(60);
         setTimeout(() => initAutoRefresh(), 2000);
-
-        const toggleBtn = document.getElementById('toggle-auto-refresh');
-        let autoRefreshEnabled = true;
-
-        if (toggleBtn) {
-            toggleBtn.addEventListener('click', () => {
-                autoRefreshEnabled = !autoRefreshEnabled;
-
-                if (autoRefreshEnabled) {
-                    startAutoRefresh(60);
-                    document.getElementById('auto-refresh-text').textContent = 'Автообновление: Вкл';
-                    toggleBtn.classList.remove('btn-danger');
-                    toggleBtn.classList.add('btn-secondary');
-                } else {
-                    if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-                    document.getElementById('auto-refresh-text').textContent = 'Автообновление: Выкл';
-                    toggleBtn.classList.remove('btn-secondary');
-                    toggleBtn.classList.add('btn-danger');
-                }
-            });
-        }
-
     } catch (error) {
         console.error('Ошибка инициализации приложения:', error);
         showError('Ошибка при запуске приложения');
@@ -181,8 +159,9 @@ async function updateCharts() {
 
         updateChartIfValid('priceDiff', 'price_difference', data.percentage_diff);
 
-
         updateStats(data);
+
+        calculateInput();
 
         const lastUpdateEl = document.getElementById('last-update');
         if (lastUpdateEl) {
@@ -250,7 +229,7 @@ function updateStats(data) {
         setStatValue('max-spread-value', maxDiff);
         setStatValue('min-spread-value', minDiff);
 
-        const avg = localStorage.getItem('avg_ratio')
+        const avg = localStorage.getItem('avg_ratio_180d')
         setValue('avg_ratio', avg);
         setValue('avg_ratio_stat', avg);
 
@@ -329,24 +308,46 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('DOMContentLoaded', () => {
     const entryButton = document.getElementById('entry-button');
     if (entryButton) {
-        entryButton.addEventListener('click', handleEntry);
+        entryButton.addEventListener('click', calculateInput);
     }
 
-    loadSavedEntryLine();
+    calculateInput();
 });
 
-function handleEntry() {
-    const btcInput = parseFloat(document.getElementById('btc-input').value);
-    const ethInput = parseFloat(document.getElementById('eth-input').value);
+function calculateInput() {
+    const btcInputEl = document.getElementById('btc-input');
+    const ethInputEl = document.getElementById('eth-input');
 
-    if (isNaN(btcInput) || isNaN(ethInput)) {
-        alert("Введите корректные значения BTC и ETH");
-        return;
+    let btcInput = parseFloat(btcInputEl.value);
+    let ethInput = parseFloat(ethInputEl.value);
+
+    // Если поля пустые, пробуем загрузить из localStorage
+    if (isNaN(btcInput)) {
+        const storedBtc = localStorage.getItem('btcInput');
+        if (storedBtc !== null) {
+            btcInput = parseFloat(storedBtc);
+        }
+    } else {
+        localStorage.setItem('btcInput', btcInput);
     }
 
-    // Получаем сохранённое среднее соотношение BTC/ETH (его нужно передавать с сервера)
-    const avg_ratio = parseFloat(localStorage.getItem('avg_ratio'));
-    if (!avg_ratio) {
+    if (isNaN(ethInput)) {
+        const storedEth = localStorage.getItem('ethInput');
+        if (storedEth !== null) {
+            ethInput = parseFloat(storedEth);
+        }
+    } else {
+        localStorage.setItem('ethInput', ethInput);
+    }
+
+    // Проверяем: если после этого значения всё ещё NaN — выходим
+    if (isNaN(btcInput) || isNaN(ethInput)) {
+        return; // Ничего не делаем
+    }
+
+    // Получаем сохранённое среднее соотношение BTC/ETH
+    const avg_ratio = parseFloat(localStorage.getItem('avg_ratio_24h'));
+    if (isNaN(avg_ratio)) {
         alert("Среднее соотношение BTC/ETH не найдено. Загрузите данные.");
         return;
     }
@@ -354,34 +355,25 @@ function handleEntry() {
     // Рассчитываем btc_as_eth
     const btcAsEth = btcInput / avg_ratio;
 
-    // Получаем min и max значений для нормализации (тоже нужно получать с сервера)
+    // Получаем min и max значений
     const btcMin = parseFloat(localStorage.getItem('btcMin'));
     const btcMax = parseFloat(localStorage.getItem('btcMax'));
     const ethMin = parseFloat(localStorage.getItem('ethMin'));
     const ethMax = parseFloat(localStorage.getItem('ethMax'));
 
-    if (!btcMin || !btcMax || !ethMin || !ethMax) {
+    if ([btcMin, btcMax, ethMin, ethMax].some(isNaN)) {
         alert("Нет данных для нормализации. Загрузите данные.");
         return;
     }
 
-    // Нормализуем btc_as_eth и ethInput
+    // Нормализуем
     const btcAsEthNorm = (btcAsEth - btcMin) / (btcMax - btcMin);
     const ethNorm = (ethInput - ethMin) / (ethMax - ethMin);
 
-    // Вычисляем процентную разницу
+    // Вычисляем разницу
     const entryLevel = btcAsEthNorm - ethNorm;
 
-    // Сохраняем в localStorage и рисуем линию
-    localStorage.setItem('entryLine', entryLevel);
     drawEntryLine(entryLevel);
-}
-
-function loadSavedEntryLine() {
-    const savedEntryLevel = localStorage.getItem('entryLine');
-    if (savedEntryLevel) {
-        drawEntryLine(parseFloat(savedEntryLevel));
-    }
 }
 
 function drawEntryLine(level) {
@@ -422,7 +414,7 @@ function drawEntryLine(level) {
 
 document.getElementById('calculate-price-btn').addEventListener('click', function () {
     const btcSum = parseFloat(document.getElementById('btc-sum-input').value);
-    const avgRatio = parseFloat(localStorage.getItem('avg_ratio'));
+    const avgRatio = parseFloat(localStorage.getItem('avg_ratio_180d'));
 
     if (!btcSum || !avgRatio) {
         document.getElementById('calculated-price').innerText = "Введите сумму BTC и убедитесь, что avg_ratio доступен.";
