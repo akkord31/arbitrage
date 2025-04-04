@@ -1,10 +1,15 @@
 from cx_Freeze import setup, Executable
 
-# Настройки сборки
+
 build_exe_options = {
     "packages": ["os", "sqlite3", "http.server", "socketserver", "threading", "time", "json", "webbrowser"],
-    "include_files": ["templates/", "market_data.db"],  # Если нужны файлы, укажи их тут
-    "excludes": ["tkinter"],  # Исключаем лишние модули
+    "include_files": [
+        "templates/",
+        "market_data.db",
+        "C:/Windows/System32/msvcp140.dll",
+        "C:/Windows/System32/vcomp140.dll"
+    ],
+    "excludes": ["tkinter"],
 }
 
 
