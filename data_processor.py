@@ -29,7 +29,7 @@ class DataProcessor:
 
     @staticmethod
     def process_market_data(raw_data_24h, raw_data_180d):
-        """Основная обработка рыночных данных с нормализацией"""
+        """Обрабатывает рыночные данные и вычисляет метрики."""
         result = {
             'btc': [],
             'eth': [],
@@ -49,17 +49,23 @@ class DataProcessor:
         data_24h, avg_24h = calculate_metrics(raw_data_24h)
         data_180d, avg_180d = calculate_metrics(raw_data_180d)
 
-        # Вычисляем min и max
-        btc_as_eth_min = data_24h['btc_as_eth'].min()
-        btc_as_eth_max = data_24h['btc_as_eth'].max()
-        eth_min = data_24h['close_eth'].min()
-        eth_max = data_24h['close_eth'].max()
-        result['btc_as_eth_min'] = btc_as_eth_min
-        result['btc_as_eth_max'] = btc_as_eth_max
-        result['eth_min'] = eth_min
-        result['eth_max'] = eth_max
-        result['avg_ratio'] = avg_24h
+        timestamp_now = pd.to_datetime(data_24h['timestamp']).max()
+        month_ago_time = timestamp_now - pd.DateOffset(days=150)
 
+        month_ago_data = data_180d[pd.to_datetime(data_180d['timestamp']) <= month_ago_time]
+        if not month_ago_data.empty:
+            first_timestamp = pd.to_datetime(month_ago_data.iloc[-1]['timestamp']).timestamp()
+            first_value = month_ago_data.iloc[-1]['percentage_diff_normalized']
+            result['relative_spread'].append({'time': first_timestamp, 'value': first_value})
+
+
+        last_2_days = data_24h.tail(48)  # Если данные почасовые, 48 записей = 2 дня
+        if not last_2_days.empty:
+            avg_last_2_days = last_2_days['percentage_diff_normalized'].mean()
+            last_timestamp = pd.to_datetime(last_2_days.iloc[-1]['timestamp']).timestamp()
+            result['relative_spread'].append({'time': last_timestamp, 'value': avg_last_2_days})
+
+        # Заполнение остальных данных
         for row in data_24h.itertuples(index=False):
             try:
                 time = int(pd.to_datetime(row.timestamp).timestamp())
@@ -79,29 +85,8 @@ class DataProcessor:
                 result['percentage_diff_norm'].append({'time': time, 'value': percentage_diff_normalized})
                 result['percentage_diff'].append({'time': time, 'value': percentage_diff})
 
-            except (ValueError, KeyError) as e:
-                logger.warning(f"Ошибка обработки записи: {e}")
             except Exception as e:
                 logger.error(f"Ошибка нормализации данных: {e}")
-
-        # Первая точка relative_spread — первый месяц назад из 180 дней
-        month_ago_idx = data_180d[pd.to_datetime(data_180d['timestamp']) <= (
-                    pd.to_datetime(data_180d['timestamp']).max() - pd.DateOffset(days=150))].index.min()
-        if pd.notna(month_ago_idx):
-            result['relative_spread'].append({
-                'time': pd.to_datetime(data_180d.loc[month_ago_idx, 'timestamp']).timestamp(),
-                'value': data_180d.loc[month_ago_idx, 'percentage_diff_normalized']
-            })
-
-        # Последняя точка relative_spread — среднее за последние 2 дня в 24 часах
-        last_2_days = data_24h.tail(48)  # Если данные почасовые, 48 записей — это 2 дня
-        avg_last_2_days = last_2_days['percentage_diff_normalized'].mean()
-        last_timestamp = pd.to_datetime(last_2_days.iloc[-1]['timestamp']).timestamp()
-
-        result['relative_spread'].append({
-            'time': last_timestamp,
-            'value': avg_last_2_days
-        })
 
         return result
 
