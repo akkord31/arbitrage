@@ -41,20 +41,42 @@
 <!-- Обновлённый контейнер для графиков -->
 <div class="charts-row">
     <div class="chart-container">
-        <div class="chart-title">BTC/USDT</div>
-        <div id="chart-btc"></div>
+        <div class="chart-header">
+            <div class="chart-title">BTC/USDT</div>
+            <button class="toggle-chart">Свернуть</button>
+        </div>
+        <div class="chart-body">
+            <div id="chart-btc"></div>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <div class="chart-header">
+            <div class="chart-title">ETH/USDT</div>
+            <button class="toggle-chart">Свернуть</button>
+        </div>
+        <div class="chart-body">
+            <div id="chart-eth"></div>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <div class="chart-header">
+            <div class="chart-title">BTC in ETH Units</div>
+            <button class="toggle-chart">Свернуть</button>
+        </div>
+        <div class="chart-body">
+            <div id="chart-btc-eth"></div>
+        </div>
     </div>
     <div class="chart-container">
-        <div class="chart-title">ETH/USDT</div>
-        <div id="chart-eth"></div>
-    </div>
-    <div class="chart-container">
-        <div class="chart-title">BTC in ETH Units</div>
-        <div id="chart-btc-eth"></div>
-    </div>
-    <div class="chart-container">
-        <div class="chart-title">Normalized Prices</div>
-        <div id="chart-normalized"></div>
+        <div class="chart-header">
+            <div class="chart-title">Normalized Prices</div>
+            <button class="toggle-chart">Свернуть</button>
+        </div>
+        <div class="chart-body">
+            <div id="chart-normalized"></div>
+        </div>
     </div>
 </div>
 
@@ -77,7 +99,7 @@
     <div class="entry-box">
         <div class="entry-title">Расчет цены по формуле</div>
         <label for="btc-sum-input">Сумма ETH:</label>
-        <input type="number" id="btc-sum-input" >
+        <input type="number" id="btc-sum-input">
         BTH: <span id="calculated-price">Загрузка...</span>
 
         <button id="calculate-price-btn">Рассчитать цену</button>
@@ -91,6 +113,15 @@
         <div>Коэф масштабирования</div>
         <div id="avg_ratio_stat">Loading...</div>
     </div>
+    <div class="entry-box">
+        <div class="entry-title">Пометочка</div>
+        Для получения прибыли при увеличении спреда BTC - LONG, ETH - SHORH
+        <br>
+        Для получения уменьшении при увеличении спреда BTC - SHORH, ETH - LONG
+
+    </div>
+
+
 </div>
 
 <div class="chart-container">

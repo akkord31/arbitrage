@@ -424,3 +424,31 @@ document.getElementById('calculate-price-btn').addEventListener('click', functio
     const calculatedPrice = btcSum * ( 1 + avgRatio / 100);
     document.getElementById('calculated-price').innerText = calculatedPrice.toFixed(4);
 });
+
+// сворачивание графика
+document.addEventListener("DOMContentLoaded", () => {
+    const toggleButtons = document.querySelectorAll(".toggle-chart");
+
+    toggleButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const container = btn.closest(".chart-container");
+            const chartBody = container.querySelector(".chart-body");
+
+            if (!chartBody) return;
+
+            // Переключаем класс collapsed для анимации
+            container.classList.toggle("collapsed");
+
+            // Скрываем или показываем содержимое графика
+            chartBody.classList.toggle("hidden");
+
+            // Обновляем текст кнопки
+            const isCollapsed = container.classList.contains("collapsed");
+            btn.textContent = isCollapsed ? "Развернуть" : "Свернуть";
+        });
+    });
+});
+
+
+
+
