@@ -34,7 +34,7 @@ function createMultiSeriesChart(containerId, seriesConfig) {
                 borderColor: 'rgba(43, 43, 67, 0.15)',
                 timeVisible: true,
                 secondsVisible: true,
-                barSpacing: 1
+                barSpacing: 1,
             }
         });
 
@@ -81,7 +81,6 @@ function createMultiSeriesChart(containerId, seriesConfig) {
 }
 
 
-// Форматирование данных с валидацией
 function formatChartData(data) {
     if (!Array.isArray(data)) return [];
 
@@ -91,8 +90,11 @@ function formatChartData(data) {
         const time = Number(item.time);
         const value = Number(item.value);
 
+        // Сдвигаем на UTC+3 (в секундах: 3 * 60 * 60 = 10800)
+        const timeShifted = isNaN(time) ? Math.floor(Date.now() / 1000) : time + 10800;
+
         return {
-            time: isNaN(time) ? Math.floor(Date.now() / 1000) : time,
+            time: timeShifted,
             value: isNaN(value) ? 0 : value
         };
     }).filter(Boolean);
