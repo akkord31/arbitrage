@@ -229,13 +229,13 @@ function updateChartIfValid(chartName, seriesName, data) {
 }
 
 function updateStats(data) {
-    if (!data?.percentage_diff || !Array.isArray(data.percentage_diff)) {
+    if (!data?.percentage_diff_norm || !Array.isArray(data.percentage_diff_norm)) {
         console.warn('Нет данных для статистики');
         return;
     }
 
     try {
-        const diffs = data.percentage_diff
+        const diffs = data.percentage_diff_norm
             .map(item => parseFloat(item?.value))
             .filter(value => !isNaN(value));
 

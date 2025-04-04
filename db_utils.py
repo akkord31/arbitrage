@@ -21,7 +21,7 @@ def initialize_exchange():
     if _exchange_instance is None:  # Если объект ещё не создан, создаём его
         _exchange_instance = ccxt.binance({
             'enableRateLimit': True,
-            'options': {'defaultType': 'spot'}
+            'options': {'defaultType': 'future'}
         })
     return _exchange_instance  # Возвращаем существующий экземпляр
 
@@ -153,8 +153,8 @@ def main():
 
     btc_data_24h = get_data(exchange, 'BTC/USDT', '1m', hours=24)
     eth_data_24h = get_data(exchange, 'ETH/USDT', '1m', hours=24)
-    btc_data_180d = get_data(exchange, 'BTC/USDT', '1d', days=180)
-    eth_data_180d = get_data(exchange, 'ETH/USDT', '1d', days=180)
+    btc_data_180d = get_data(exchange, 'BTC/USDT', '12h', days=180)
+    eth_data_180d = get_data(exchange, 'ETH/USDT', '12h', days=180)
 
     save_data_in_db(btc_data_24h, eth_data_24h, "market_data_24h")
     save_data_in_db(btc_data_180d, eth_data_180d, "market_data_180d")
