@@ -161,7 +161,7 @@ input {
     justify-content: center; /* Центрируем элементы по горизонтали */
     align-items: center; /* Выравниваем по вертикали */
     gap: 20px; /* Отступы между элементами */
-    flex-wrap: nowrap; /* ОТКЛЮЧАЕМ перенос строк */
+    flex-wrap: nowrap;
     max-width: 1000px; /* Достаточная ширина */
     margin: 20px auto;
 }
@@ -208,7 +208,25 @@ input {
 
 @media (max-width: 768px) {
     .chart-container {
-        height: 300px;
-        width: 100%;
+        width: 100% !important;
+        height: auto; /* Можно убрать фиксированную высоту, если нужно */
+    }
+
+    .charts-row {
+        flex-direction: column; /* Ставим графики вертикально */
+        gap: 15px;
+    }
+
+    .input-container {
+        flex-wrap: wrap;           /* ✅ Разрешаем перенос */
+        flex-direction: column;    /* Ставим в столбик */
+        align-items: stretch;      /* Растягиваем элементы */
+        gap: 15px;
+    }
+
+    .entry-box,
+    .stat-box {
+        width: 90% !important;    /* Занимают всю ширину */
+        max-width: 100%;
     }
 }
